@@ -1,0 +1,33 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies and builds
+node_modules/
+dist/
+build/
+coverage/
+.vite/
+
+# Logs and local runtime files
+*.log
+*.pid
+.DS_Store
+.Rhistory
+
+# Editors
+.idea/
+.vscode/
+*.swp
+
+# Database backups and uploads
+*.dump
+*.backup
+uploads/
+
+# Temporary files
+tmp/
+.cache/
