@@ -15,6 +15,7 @@ Planning Phases 1-3 are complete. Implementation begins with Phase 4.
 - [REST API contract](docs/phase-2/API_CONTRACT.md)
 - [Database design and ER diagram](docs/phase-3/DATABASE_DESIGN.md)
 - [Data dictionary](docs/phase-3/DATA_DICTIONARY.md)
+- [Individual Git collaboration guide](docs/GIT_COLLABORATION_GUIDE.md)
 
 ## Planned stack
 
