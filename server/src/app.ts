@@ -1,5 +1,9 @@
 import express from 'express';
 
+import { AppError } from './errors/app-error.js';
+import { errorHandler } from './middleware/error-handler.js';
+import { requestId } from './middleware/request-id.js';
+import { mediaRouter } from './routes/media.routes.js';
 import { prisma } from './utils/prisma.js';
 
 export const createApp = () => {
@@ -7,6 +11,7 @@ export const createApp = () => {
 
   app.disable('x-powered-by');
   app.use(express.json({ limit: '1mb' }));
+  app.use(requestId);
 
   app.get('/api/v1', (_request, response) => {
     response.json({
@@ -37,14 +42,17 @@ export const createApp = () => {
         },
       });
     } catch {
-      response.status(503).json({
-        error: {
-          code: 'DATABASE_UNAVAILABLE',
-          message: 'The database is not ready.',
-        },
-      });
+      throw new AppError(503, 'DATABASE_UNAVAILABLE', 'The database is not ready.');
     }
   });
+
+  app.use('/api/v1/media', mediaRouter);
+
+  app.use((_request, _response, next) => {
+    next(new AppError(404, 'ROUTE_NOT_FOUND', 'The requested API route does not exist.'));
+  });
+
+  app.use(errorHandler);
 
   return app;
 };
