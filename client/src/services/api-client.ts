@@ -1,0 +1,44 @@
+export type ApiErrorBody = {
+  error: {
+    code: string;
+    message: string;
+    details?: Array<{ field: string; message: string }>;
+    requestId?: string;
+  };
+};
+export class ApiError extends Error {
+  public readonly code: string;
+  public readonly details?: ApiErrorBody['error']['details'];
+  public readonly requestId?: string;
+  public readonly status: number;
+  public constructor(status: number, body: ApiErrorBody['error']) {
+    super(body.message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = body.code;
+    this.details = body.details;
+    this.requestId = body.requestId;
+  }
+}
+type RequestOptions = Omit<RequestInit, 'body' | 'headers'> & {
+  body?: unknown;
+  headers?: HeadersInit;
+};
+const developmentUserId = import.meta.env.VITE_DEVELOPMENT_USER_ID;
+/** Calls the Vite /api proxy. VITE_DEVELOPMENT_USER_ID is optional and only supports local Phase 5 testing until Phase 6 sessions exist. */
+export async function apiClient<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const { body, headers: requestHeaders, ...requestOptions } = options;
+  const headers = new Headers(requestHeaders);
+  const hasBody = body !== undefined;
+  if (hasBody) headers.set('content-type', 'application/json');
+  if (developmentUserId) headers.set('x-user-id', developmentUserId);
+  const response = await fetch(`/api/v1${path}`, {
+    ...requestOptions,
+    headers,
+    ...(hasBody ? { body: JSON.stringify(body) } : {}),
+  });
+  if (response.status === 204) return undefined as T;
+  const payload: unknown = await response.json();
+  if (!response.ok) throw new ApiError(response.status, (payload as ApiErrorBody).error);
+  return payload as T;
+}
