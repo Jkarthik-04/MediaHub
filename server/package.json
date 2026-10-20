@@ -1,0 +1,31 @@
+{
+  "name": "@mediahub/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "dotenv -e ../.env -- tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "dotenv -e ../.env -- node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit --pretty false && tsc -p prisma/tsconfig.json --noEmit --pretty false",
+    "db:generate": "dotenv -e ../.env -- prisma generate",
+    "db:validate": "dotenv -e ../.env -- prisma validate",
+    "db:migrate": "dotenv -e ../.env -- prisma migrate dev",
+    "db:seed": "dotenv -e ../.env -- prisma db seed",
+    "db:studio": "dotenv -e ../.env -- prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "6.12.0",
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.5",
+    "dotenv-cli": "^11.0.0",
+    "prisma": "6.12.0",
+    "tsx": "^4.23.15"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}
