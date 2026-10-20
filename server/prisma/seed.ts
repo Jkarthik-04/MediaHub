@@ -39,6 +39,7 @@ const seedIds = {
 } as const;
 
 const seedDate = new Date('2026-10-05T00:00:00.000Z');
+const sourceReviewDate = new Date('2026-10-20T00:00:00.000Z');
 
 async function seedDatabase() {
   await prisma.$transaction(
@@ -148,10 +149,24 @@ async function seedDatabase() {
           isEnabled: true,
         },
         {
+          key: 'jikan',
+          name: 'Jikan',
+          connectorKind: ConnectorKind.API,
+          baseUrl: 'https://api.jikan.moe/v4',
+          isEnabled: true,
+        },
+        {
           key: 'kitsu',
           name: 'Kitsu',
           connectorKind: ConnectorKind.API,
           baseUrl: 'https://kitsu.io/api/edge',
+          isEnabled: false,
+        },
+        {
+          key: 'imdb',
+          name: 'IMDb',
+          connectorKind: ConnectorKind.API,
+          baseUrl: 'https://api-fulfill.dataexchange.us-east-1.amazonaws.com/v1',
           isEnabled: false,
         },
       ] as const;
@@ -165,9 +180,9 @@ async function seedDatabase() {
             connectorKind: source.connectorKind,
             baseUrl: source.baseUrl,
             isEnabled: source.isEnabled,
-            termsCheckedAt: seedDate,
+            termsCheckedAt: sourceReviewDate,
           },
-          create: { ...source, termsCheckedAt: seedDate },
+          create: { ...source, termsCheckedAt: sourceReviewDate },
           select: { id: true },
         });
         sources.set(source.key, savedSource);
