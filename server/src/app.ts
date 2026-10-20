@@ -3,6 +3,7 @@ import express from 'express';
 import { AppError } from './errors/app-error.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestId } from './middleware/request-id.js';
+import { libraryRouter } from './routes/library.routes.js';
 import { mediaRouter } from './routes/media.routes.js';
 import { prisma } from './utils/prisma.js';
 
@@ -47,6 +48,7 @@ export const createApp = () => {
   });
 
   app.use('/api/v1/media', mediaRouter);
+  app.use('/api/v1/library', libraryRouter);
 
   app.use((_request, _response, next) => {
     next(new AppError(404, 'ROUTE_NOT_FOUND', 'The requested API route does not exist.'));
