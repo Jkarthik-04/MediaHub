@@ -1,9 +1,15 @@
 import { Router } from 'express';
 
-import { listMedia } from '../controllers/media.controller.js';
+import { createManualMedia, getMedia, listMedia } from '../controllers/media.controller.js';
 import { validateRequest } from '../middleware/validate-request.js';
-import { mediaListQuerySchema } from '../validation/media.validation.js';
+import {
+  manualMediaBodySchema,
+  mediaIdParamsSchema,
+  mediaListQuerySchema,
+} from '../validation/media.validation.js';
 
 export const mediaRouter = Router();
 
 mediaRouter.get('/', validateRequest('query', mediaListQuerySchema), listMedia);
+mediaRouter.post('/manual', validateRequest('body', manualMediaBodySchema), createManualMedia);
+mediaRouter.get('/:mediaId', validateRequest('params', mediaIdParamsSchema), getMedia);
