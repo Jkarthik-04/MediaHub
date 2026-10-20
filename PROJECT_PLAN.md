@@ -353,6 +353,8 @@ docs: add normalized ER schema dictionary and index plan
 
 ## Phase 4 - Repository foundation, PostgreSQL, and Prisma
 
+**Status:** Completed on 20 October 2026.
+
 **Goal:** Produce a reproducible development environment and a working schema populated with test data.
 
 **Suggested duration:** Week 4
@@ -396,16 +398,21 @@ MediaHub/
 
 ### Required artifacts
 
-- Working client and server skeletons.
-- PostgreSQL service.
-- Prisma models and migration history.
-- Seed script.
-- Environment template.
-- Updated installation section in README.
+- [x] Working client and server skeletons.
+- [x] PostgreSQL service.
+- [x] Prisma models and migration history.
+- [x] Repeatable seed script.
+- [x] Environment template.
+- [x] Health-check endpoints and startup scripts.
+- [x] GitHub Actions CI workflow.
+- [x] Updated installation section in README.
 
 ### Completion checkpoint
 
-This phase is done when every teammate can start the same environment, Prisma Studio shows correctly related seed data, and CI passes on `dev`.
+Completed locally: the documented setup starts both applications and PostgreSQL, Prisma
+Studio can inspect correctly related seed data, and the same lint, type-check, build, and
+formatting commands used by CI pass. The GitHub workflow will run after this branch is
+pushed and a pull request is opened against `dev`.
 
 ### Milestone commit 4
 
