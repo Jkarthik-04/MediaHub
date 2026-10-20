@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const discoverySearchQuerySchema = z.object({
   q: z.string().trim().min(2).max(200),
-  type: z.enum(['MOVIE', 'ANIME', 'MANGA']),
-  provider: z.enum(['jikan', 'imdb']).optional(),
+  type: z.enum(['MOVIE', 'ANIME', 'MANGA', 'BOOK']),
+  provider: z.enum(['jikan', 'omdb', 'open-library']).optional(),
   page: z.coerce.number().int().min(1).max(100).default(1),
   limit: z.coerce.number().int().min(1).max(25).default(10),
 });

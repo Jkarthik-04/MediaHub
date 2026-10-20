@@ -163,10 +163,10 @@ async function seedDatabase() {
           isEnabled: false,
         },
         {
-          key: 'imdb',
-          name: 'IMDb',
+          key: 'omdb',
+          name: 'OMDb',
           connectorKind: ConnectorKind.API,
-          baseUrl: 'https://api-fulfill.dataexchange.us-east-1.amazonaws.com/v1',
+          baseUrl: 'https://www.omdbapi.com',
           isEnabled: false,
         },
       ] as const;
