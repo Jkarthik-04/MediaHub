@@ -14,6 +14,9 @@ import { prisma } from '../src/utils/prisma.js';
 
 const testUserId = '90000000-0000-4000-8000-000000000001';
 const testSessionId = 'phase6-integration-session';
+const adminUserId = '00000000-0000-4000-8000-000000000001';
+const adminSessionId = 'phase6-admin-session';
+const expiredSessionId = 'phase6-expired-session';
 const interstellarId = '10000000-0000-4000-8000-000000000001';
 const nativeFetch = globalThis.fetch;
 const server = createApp().listen(0);
@@ -24,27 +27,33 @@ type JsonObject = Record<string, unknown>;
 
 const cleanupTestData = async () => {
   await prisma.auditLog.deleteMany({ where: { actorUserId: testUserId } });
-  await prisma.userSession.deleteMany({ where: { sid: testSessionId } });
+  await prisma.userSession.deleteMany({
+    where: { sid: { in: [testSessionId, adminSessionId, expiredSessionId] } },
+  });
   await prisma.user.deleteMany({ where: { id: testUserId } });
 };
 
-const getSessionCookie = () => {
-  const signedSessionId = sign(testSessionId, getSessionSecret());
+const getSessionCookie = (sessionId: string) => {
+  const signedSessionId = sign(sessionId, getSessionSecret());
   return `${sessionCookieName}=${encodeURIComponent(`s:${signedSessionId}`)}`;
 };
 
-const api = async (path: string, init: RequestInit = {}) => {
+const apiForSession = async (sessionId: string, path: string, init: RequestInit = {}) => {
   const response = await nativeFetch(`${baseUrl}${path}`, {
     ...init,
     headers: {
       'content-type': 'application/json',
-      Cookie: getSessionCookie(),
+      Cookie: getSessionCookie(sessionId),
       ...init.headers,
     },
   });
   const body = response.status === 204 ? {} : ((await response.json()) as JsonObject);
   return { response, body };
 };
+
+const api = (path: string, init: RequestInit = {}) => apiForSession(testSessionId, path, init);
+const apiAsAdmin = (path: string, init: RequestInit = {}) =>
+  apiForSession(adminSessionId, path, init);
 
 before(async () => {
   await cleanupTestData();
@@ -75,6 +84,40 @@ before(async () => {
       expire: new Date(Date.now() + sessionMaxAgeMilliseconds),
     },
   });
+  await prisma.userSession.create({
+    data: {
+      sid: expiredSessionId,
+      sess: {
+        cookie: {
+          originalMaxAge: sessionMaxAgeMilliseconds,
+          expires: new Date(Date.now() - 60_000).toISOString(),
+          httpOnly: true,
+          path: '/',
+          sameSite: 'lax',
+          secure: false,
+        },
+        passport: { user: testUserId },
+      },
+      expire: new Date(Date.now() - 60_000),
+    },
+  });
+  await prisma.userSession.create({
+    data: {
+      sid: adminSessionId,
+      sess: {
+        cookie: {
+          originalMaxAge: sessionMaxAgeMilliseconds,
+          expires: new Date(Date.now() + sessionMaxAgeMilliseconds).toISOString(),
+          httpOnly: true,
+          path: '/',
+          sameSite: 'lax',
+          secure: false,
+        },
+        passport: { user: adminUserId },
+      },
+      expire: new Date(Date.now() + sessionMaxAgeMilliseconds),
+    },
+  });
 });
 
 after(async () => {
@@ -87,13 +130,24 @@ after(async () => {
   await prisma.$disconnect();
 });
 
-test('Phase 5 API workflow', async (t) => {
+test('MediaHub API security and core workflow', async (t) => {
   await t.test('reports health and rejects requests without a user', async () => {
     const live = await nativeFetch(`${baseUrl}/health/live`);
     assert.equal(live.status, 200);
+    assert.equal(live.headers.get('x-content-type-options'), 'nosniff');
+
+    const corsResponse = await nativeFetch(`${baseUrl}/health/live`, {
+      headers: { Origin: 'http://localhost:5173' },
+    });
+    assert.equal(corsResponse.headers.get('access-control-allow-origin'), 'http://localhost:5173');
 
     const ready = await nativeFetch(`${baseUrl}/health/ready`);
     assert.equal(ready.status, 200);
+
+    const oauthUnavailable = await nativeFetch(`${baseUrl}/auth/google`, { redirect: 'manual' });
+    assert.equal(oauthUnavailable.status, 503);
+    const oauthError = (await oauthUnavailable.json()) as { error: { code: string } };
+    assert.equal(oauthError.error.code, 'OAUTH_NOT_CONFIGURED');
 
     const unauthorized = await nativeFetch(`${baseUrl}/library`);
     assert.equal(unauthorized.status, 401);
@@ -110,6 +164,28 @@ test('Phase 5 API workflow', async (t) => {
     const profileData = profile.body.data as { id: string; role: string };
     assert.equal(profileData.id, testUserId);
     assert.equal(profileData.role, 'USER');
+
+    const expired = await apiForSession(expiredSessionId, '/auth/me');
+    assert.equal(expired.response.status, 401);
+
+    const userAdminRequest = await api('/admin/overview');
+    assert.equal(userAdminRequest.response.status, 403);
+    const userAdminError = userAdminRequest.body.error as { code: string };
+    assert.equal(userAdminError.code, 'FORBIDDEN');
+
+    const adminRequest = await apiAsAdmin('/admin/overview');
+    assert.equal(adminRequest.response.status, 200);
+    const adminOverview = adminRequest.body.data as { activeUsers: number; enabledSources: number };
+    assert.ok(adminOverview.activeUsers >= 2);
+    assert.ok(adminOverview.enabledSources >= 1);
+
+    const otherUsersEntry = await api('/library/30000000-0000-4000-8000-000000000003', {
+      method: 'PATCH',
+      body: JSON.stringify({ notes: 'Attempted cross-user update' }),
+    });
+    assert.equal(otherUsersEntry.response.status, 404);
+    const ownershipError = otherUsersEntry.body.error as { code: string };
+    assert.equal(ownershipError.code, 'LIBRARY_ENTRY_NOT_FOUND');
   });
 
   await t.test('returns standard validation and missing-record errors', async () => {

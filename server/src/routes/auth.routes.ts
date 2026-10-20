@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { AuthenticateOptionsGoogle } from 'passport-google-oauth20';
 
 import { clientOrigin, isGoogleOAuthConfigured } from '../config/security.js';
 import { passport } from '../config/passport.js';
@@ -7,6 +8,13 @@ import { AppError } from '../errors/app-error.js';
 import { requireUser } from '../middleware/require-user.js';
 
 export const authRouter = Router();
+
+// The runtime strategy accepts `true` and stores a per-login state value in the session.
+// The current DefinitelyTyped declaration only permits a string for this option.
+const googleAuthenticationOptions = {
+  scope: ['profile', 'email'],
+  state: true,
+} as unknown as AuthenticateOptionsGoogle;
 
 const requireGoogleConfiguration = (
   _request: unknown,
@@ -29,7 +37,7 @@ const requireGoogleConfiguration = (
 authRouter.get(
   '/google',
   requireGoogleConfiguration,
-  passport.authenticate('google', { scope: ['profile', 'email'] }),
+  passport.authenticate('google', googleAuthenticationOptions),
 );
 authRouter.get(
   '/google/callback',

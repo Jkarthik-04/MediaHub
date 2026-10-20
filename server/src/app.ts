@@ -11,6 +11,7 @@ import { errorHandler } from './middleware/error-handler.js';
 import { requestId } from './middleware/request-id.js';
 import { dashboardRouter } from './routes/dashboard.routes.js';
 import { authRouter } from './routes/auth.routes.js';
+import { adminRouter } from './routes/admin.routes.js';
 import { discoveryRouter } from './routes/discovery.routes.js';
 import { importRouter } from './routes/import.routes.js';
 import { libraryRouter } from './routes/library.routes.js';
@@ -73,6 +74,7 @@ export const createApp = () => {
   });
 
   app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/admin', adminRouter);
   app.use('/api/v1/media', mediaRouter);
   app.use('/api/v1/library', libraryRouter);
   app.use('/api/v1/dashboard', dashboardRouter);
