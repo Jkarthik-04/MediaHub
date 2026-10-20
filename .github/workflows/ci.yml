@@ -11,11 +11,26 @@ permissions:
 
 jobs:
   checks:
-    name: Lint, type-check, and build
+    name: Test, lint, type-check, and build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       DATABASE_URL: postgresql://mediahub:mediahub@localhost:5432/mediahub?schema=public
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: mediahub
+          POSTGRES_USER: mediahub
+          POSTGRES_PASSWORD: mediahub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mediahub -d mediahub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Check out repository
@@ -32,6 +47,14 @@ jobs:
 
       - name: Generate Prisma client
         run: npm run db:generate
+
+      - name: Prepare test database
+        run: |
+          npm run db:deploy
+          npm run db:seed
+
+      - name: Run integration tests
+        run: npm test
 
       - name: Lint
         run: npm run lint

@@ -1,6 +1,6 @@
 # External Source Feasibility and Collection Policy
 
-**Decision date:** 5 October 2026  
+**Decision date:** 20 October 2026
 **Status:** Approved planning baseline; re-check provider terms immediately before implementation.
 
 ## Collection policy
@@ -21,9 +21,12 @@ The application will not bypass authentication, CAPTCHAs, access controls, rate 
 | Movies and TV | TMDB API | **Approved primary** for non-commercial coursework | Use a server-side API credential, cache searches, handle `429`, use HTTPS, and show the required TMDB notice/logo in Credits/About | Title, alternate/original title, overview, dates, genres, poster/backdrop paths, runtime/episode information, provider ID |
 | Books | Google Books API | **Approved primary** | Use a restricted API key for public data; OAuth only for user-private Books data; paginate within API limits and retain Google volume ID/source link | Title, authors, description, publication date, categories, page count, ISBNs, cover links, volume ID |
 | Books | Open Library API | **Approved fallback**, not a bulk backend | Use API rather than HTML scraping; identify the app with `User-Agent` and contact; stay within documented request limits; cache and batch responsibly | Work/edition ID, title, author, subjects, ISBN, covers, publication data |
-| Anime and manga | Kitsu public JSON:API | **Provisional primary** | Public catalogue `GET` operations are documented without user authentication. Treat limits as unspecified, use conservative throttling/cache, and re-check current terms and endpoint health before implementation | Canonical/alternate titles, synopsis, subtype, dates, status, poster, episode/chapter/volume counts, categories, Kitsu ID |
+| Movies | OMDb API | **Approved primary** | Use a server-side API key, cache searches, and retain the returned IMDb identifier and attribution. OMDb is a separate service, not the official IMDb API | Title, year, poster, type, IMDb ID; detail lookup can add plot, genres, runtime, and ratings |
+| Movies | IMDb official API | **Not selected** | Interactive GraphQL search requires an AWS Data Exchange subscription, AWS request signing, dataset/revision/asset IDs, and an IMDb API key. Do not scrape IMDb pages | Title, release data, genres, plot, runtime, poster, IMDb ID when licensed |
+| Movies | IMDb non-commercial datasets | **Approved offline fallback** | Official daily TSV downloads may be used for personal/non-commercial coursework under IMDb's license, but they are not an interactive search API and must be refreshed as a controlled import | IMDb ID, title type, primary/original title, year, runtime, genres, ratings |
+| Anime and manga | Jikan v4 | **Approved by project decision** | Jikan is auth-less, unofficial, and derives public MyAnimeList data. Use short caching, timeouts, conservative requests, attribution, and no bulk mirroring | Canonical/alternate titles, synopsis, dates, poster, episode/chapter counts, genres, MAL ID |
+| Anime and manga | Kitsu public JSON:API | **Fallback** | Retain as a fallback if Jikan availability or source policy changes | Canonical/alternate titles, synopsis, subtype, dates, status, poster, episode/chapter/volume counts, categories, Kitsu ID |
 | Anime and manga | AniList GraphQL API | **Rejected as default** | Current terms prohibit competing non-complementary tracker services. Do not integrate unless written permission or an applicable terms change is confirmed | None in baseline |
-| Anime and manga | Jikan | **Not selected for baseline** | It is an unofficial read-only API that scrapes MyAnimeList. Avoid adding indirect terms/reliability risk when a documented public catalogue API is available | Potential development fallback only after policy review |
 | Public lists | User-owned CSV/JSON exports | **Approved** | User uploads an export they are authorized to use. Parse locally/server-side, show preview, and require confirmation | Source ID/title, status, progress, rating when present |
 | Public lists | Provider-authorized user/list APIs | **Approved when authorized** | Use the provider's OAuth/list endpoint and least-required scopes; never request or store the user's provider password | External IDs, user status/progress/rating as permitted |
 | Public HTML pages | Site-specific collector | **No source approved yet** | May be added only after explicit permission is documented. Use conservative rate limiting and fixture-based parser tests | Minimal public metadata only |
@@ -92,6 +95,9 @@ The UI may show **No result? Add a niche title** after an external search return
 - [Kitsu anime/manga API documentation](https://kitsu.docs.apiary.io/)
 - [AniList API terms](https://docs.anilist.co/guide/terms-of-use)
 - [Jikan API documentation](https://docs.api.jikan.moe/)
+- [OMDb API documentation](https://www.omdbapi.com/)
+- [IMDb API access requirements](https://data.imdb.com/documentation/api-documentation/getting-access/)
+- [IMDb non-commercial datasets](https://www.imdb.com/interfaces/)
 
 ## Implementation gate
 
