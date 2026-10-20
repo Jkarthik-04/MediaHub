@@ -167,7 +167,7 @@ async function seedDatabase() {
           name: 'OMDb',
           connectorKind: ConnectorKind.API,
           baseUrl: 'https://www.omdbapi.com',
-          isEnabled: false,
+          isEnabled: true,
         },
       ] as const;
 
