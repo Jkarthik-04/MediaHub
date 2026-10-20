@@ -18,8 +18,14 @@
     "db:migrate": "npm run db:migrate --workspace server",
     "db:seed": "npm run db:seed --workspace server",
     "db:studio": "npm run db:studio --workspace server",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format": "prettier --write client/src client/index.html \"client/*.json\" client/vite.config.ts server/src server/prisma/seed.ts \"server/*.json\" package.json eslint.config.js .github/workflows/ci.yml",
+    "format:check": "prettier --check client/src client/index.html \"client/*.json\" client/vite.config.ts server/src server/prisma/seed.ts \"server/*.json\" package.json eslint.config.js .github/workflows/ci.yml"
+  },
+  "prettier": {
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "printWidth": 100
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
