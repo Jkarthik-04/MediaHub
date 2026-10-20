@@ -11,15 +11,17 @@
     "dev:client": "npm run dev --workspace client",
     "dev:server": "npm run dev --workspace server",
     "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspace server",
     "lint": "eslint .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "db:generate": "npm run db:generate --workspace server",
     "db:validate": "npm run db:validate --workspace server",
     "db:migrate": "npm run db:migrate --workspace server",
+    "db:deploy": "npm run db:deploy --workspace server",
     "db:seed": "npm run db:seed --workspace server",
     "db:studio": "npm run db:studio --workspace server",
-    "format": "prettier --write client/src client/index.html \"client/*.json\" client/vite.config.ts server/src server/prisma/seed.ts \"server/*.json\" package.json eslint.config.js .github/workflows/ci.yml",
-    "format:check": "prettier --check client/src client/index.html \"client/*.json\" client/vite.config.ts server/src server/prisma/seed.ts \"server/*.json\" package.json eslint.config.js .github/workflows/ci.yml"
+    "format": "prettier --write client/src client/index.html \"client/*.json\" client/vite.config.ts server/src server/test server/prisma/seed.ts \"server/*.json\" package.json eslint.config.js .github/workflows/ci.yml",
+    "format:check": "prettier --check client/src client/index.html \"client/*.json\" client/vite.config.ts server/src server/test server/prisma/seed.ts \"server/*.json\" package.json eslint.config.js .github/workflows/ci.yml"
   },
   "prettier": {
     "semi": true,
