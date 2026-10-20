@@ -51,7 +51,7 @@ npm run dev:client
 
 Open:
 
-- React: <http://localhost:5173>
+- React: <http://localhost:5174>
 - API: <http://localhost:3000/api/v1>
 - Liveness: <http://localhost:3000/api/v1/health/live>
 - Database readiness: <http://localhost:3000/api/v1/health/ready>

@@ -6,11 +6,13 @@ will supply most catalogue data, while manual entry remains available for niche 
 
 ## Current status
 
-Planning Phases 1-3, the Phase 4 application/database foundation, and the Phase 5 core API
-are complete. The repository includes working React and Express applications, PostgreSQL,
+Planning Phases 1-3, the Phase 4 application/database foundation, the Phase 5 core API, and
+the Phase 6 authentication/authorization implementation are complete. The repository includes
+working React and Express applications, PostgreSQL,
 the 15-table Prisma schema, repeatable seed data, media/library/progress/dashboard APIs,
 Jikan/OMDb/Open Library discovery, staged imports, database views/function/trigger/indexes,
-integration tests, and continuous integration.
+secure Google OAuth session configuration, role-protected routes, integration tests, and
+continuous integration.
 
 ## Prerequisites
 
@@ -62,7 +64,7 @@ npm run dev:client
 
 Open these addresses:
 
-- React client: <http://localhost:5173>
+- React client: <http://localhost:5174>
 - Express API: <http://localhost:3000/api/v1>
 - Liveness check: <http://localhost:3000/api/v1/health/live>
 - Database readiness check: <http://localhost:3000/api/v1/health/ready>
@@ -137,4 +139,5 @@ docs/             Planning and database documentation
 - [Phase 4 foundation and setup](docs/phase-4/FOUNDATION.md)
 - [Implemented Phase 5 API reference](docs/phase-5/API_REFERENCE.md)
 - [Query-plan and database-object evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md)
+- [Phase 6 authentication, authorization, and security](docs/phase-6/AUTHORIZATION_AND_SECURITY.md)
 - [Individual Git collaboration guide](docs/GIT_COLLABORATION_GUIDE.md)

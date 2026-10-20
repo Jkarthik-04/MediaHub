@@ -9,6 +9,7 @@
 | 3 | **Complete** | [Database design](docs/phase-3/DATABASE_DESIGN.md), [data dictionary](docs/phase-3/DATA_DICTIONARY.md) |
 | 4 | **Complete** | [Foundation and setup](docs/phase-4/FOUNDATION.md), React/Express, Prisma, seed data, Docker Compose, CI |
 | 5 | **Complete** | [Implemented API reference](docs/phase-5/API_REFERENCE.md), [query-plan evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md), integration tests |
+| 6 | **Complete in code; OAuth cloud configuration pending** | [Authentication, authorization, and security](docs/phase-6/AUTHORIZATION_AND_SECURITY.md) |
 
 The local Git repository and `main`/`dev` branches are initialized. Phase 1 faculty approval and GitHub remote/collaborator configuration require external details and are intentionally left as follow-up actions. All locally completable planning work for Phases 1-3 is finished as of **5 October 2026**. Implementation begins at Phase 4.
 

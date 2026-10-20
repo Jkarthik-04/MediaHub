@@ -24,17 +24,16 @@ type RequestOptions = Omit<RequestInit, 'body' | 'headers'> & {
   body?: unknown;
   headers?: HeadersInit;
 };
-const developmentUserId = import.meta.env.VITE_DEVELOPMENT_USER_ID;
-/** Calls the Vite /api proxy. VITE_DEVELOPMENT_USER_ID is optional and only supports local Phase 5 testing until Phase 6 sessions exist. */
+/** Calls the Vite proxy and includes the secure Phase 6 session cookie. */
 export async function apiClient<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { body, headers: requestHeaders, ...requestOptions } = options;
   const headers = new Headers(requestHeaders);
   const hasBody = body !== undefined;
   if (hasBody) headers.set('content-type', 'application/json');
-  if (developmentUserId) headers.set('x-user-id', developmentUserId);
   const response = await fetch(`/api/v1${path}`, {
     ...requestOptions,
     headers,
+    credentials: 'include',
     ...(hasBody ? { body: JSON.stringify(body) } : {}),
   });
   if (response.status === 204) return undefined as T;

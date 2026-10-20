@@ -16,6 +16,8 @@ jobs:
     timeout-minutes: 10
     env:
       DATABASE_URL: postgresql://mediahub:mediahub@localhost:5432/mediahub?schema=public
+      # Test-only value required to initialize the server-side session middleware.
+      SESSION_SECRET: ci-test-session-secret-not-for-production
 
     services:
       postgres:
