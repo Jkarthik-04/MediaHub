@@ -6,6 +6,7 @@ import { sign } from 'cookie-signature';
 import { createApp } from '../src/app.js';
 import {
   getSessionSecret,
+  isGoogleOAuthConfigured,
   sessionCookieName,
   sessionMaxAgeMilliseconds,
 } from '../src/config/security.js';
@@ -137,17 +138,22 @@ test('MediaHub API security and core workflow', async (t) => {
     assert.equal(live.headers.get('x-content-type-options'), 'nosniff');
 
     const corsResponse = await nativeFetch(`${baseUrl}/health/live`, {
-      headers: { Origin: 'http://localhost:5173' },
+      headers: { Origin: 'http://localhost:5174' },
     });
-    assert.equal(corsResponse.headers.get('access-control-allow-origin'), 'http://localhost:5173');
+    assert.equal(corsResponse.headers.get('access-control-allow-origin'), 'http://localhost:5174');
 
     const ready = await nativeFetch(`${baseUrl}/health/ready`);
     assert.equal(ready.status, 200);
 
-    const oauthUnavailable = await nativeFetch(`${baseUrl}/auth/google`, { redirect: 'manual' });
-    assert.equal(oauthUnavailable.status, 503);
-    const oauthError = (await oauthUnavailable.json()) as { error: { code: string } };
-    assert.equal(oauthError.error.code, 'OAUTH_NOT_CONFIGURED');
+    const oauthResponse = await nativeFetch(`${baseUrl}/auth/google`, { redirect: 'manual' });
+    if (isGoogleOAuthConfigured()) {
+      assert.equal(oauthResponse.status, 302);
+      assert.match(oauthResponse.headers.get('location') ?? '', /accounts\.google\.com/);
+    } else {
+      assert.equal(oauthResponse.status, 503);
+      const oauthError = (await oauthResponse.json()) as { error: { code: string } };
+      assert.equal(oauthError.error.code, 'OAUTH_NOT_CONFIGURED');
+    }
 
     const unauthorized = await nativeFetch(`${baseUrl}/library`);
     assert.equal(unauthorized.status, 401);

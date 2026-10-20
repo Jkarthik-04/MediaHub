@@ -64,7 +64,7 @@ npm run dev:client
 
 Open these addresses:
 
-- React client: <http://localhost:5173>
+- React client: <http://localhost:5174>
 - Express API: <http://localhost:3000/api/v1>
 - Liveness check: <http://localhost:3000/api/v1/health/live>
 - Database readiness check: <http://localhost:3000/api/v1/health/ready>

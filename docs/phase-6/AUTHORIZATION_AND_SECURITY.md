@@ -50,7 +50,7 @@ Configure these values in `.env`:
 ```dotenv
 SESSION_SECRET=use-a-long-random-value-with-at-least-32-characters
 SESSION_MAX_AGE_DAYS=7
-CLIENT_ORIGIN=http://localhost:5173
+CLIENT_ORIGIN=http://localhost:5174
 ```
 
 In production, `SESSION_SECRET` must not be a placeholder and must be at least 32 characters.

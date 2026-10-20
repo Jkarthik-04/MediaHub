@@ -1,7 +1,7 @@
 const sessionMaxAgeDays = Number(process.env.SESSION_MAX_AGE_DAYS ?? 7);
 
 export const isProduction = process.env.NODE_ENV === 'production';
-export const clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';
+export const clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5174';
 export const sessionCookieName = 'mediahub.sid';
 export const sessionMaxAgeMilliseconds =
   Number.isFinite(sessionMaxAgeDays) && sessionMaxAgeDays > 0
