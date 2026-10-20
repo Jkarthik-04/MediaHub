@@ -1,9 +1,16 @@
+import cors from 'cors';
 import express from 'express';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
+import { configurePassport, passport } from './config/passport.js';
+import { sessionMiddleware } from './config/session.js';
+import { clientOrigin, isProduction } from './config/security.js';
 import { AppError } from './errors/app-error.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestId } from './middleware/request-id.js';
 import { dashboardRouter } from './routes/dashboard.routes.js';
+import { authRouter } from './routes/auth.routes.js';
 import { discoveryRouter } from './routes/discovery.routes.js';
 import { importRouter } from './routes/import.routes.js';
 import { libraryRouter } from './routes/library.routes.js';
@@ -13,9 +20,24 @@ import { prisma } from './utils/prisma.js';
 export const createApp = () => {
   const app = express();
 
+  configurePassport();
+  if (isProduction) app.set('trust proxy', 1);
   app.disable('x-powered-by');
+  app.use(helmet());
+  app.use(cors({ origin: clientOrigin, credentials: true }));
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1_000,
+      limit: 100,
+      standardHeaders: 'draft-8',
+      legacyHeaders: false,
+    }),
+  );
   app.use(express.json({ limit: '1mb' }));
   app.use(requestId);
+  app.use(sessionMiddleware);
+  app.use(passport.initialize());
+  app.use(passport.session());
 
   app.get('/api/v1', (_request, response) => {
     response.json({
@@ -50,6 +72,7 @@ export const createApp = () => {
     }
   });
 
+  app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/media', mediaRouter);
   app.use('/api/v1/library', libraryRouter);
   app.use('/api/v1/dashboard', dashboardRouter);

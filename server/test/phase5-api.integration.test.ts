@@ -1,11 +1,19 @@
 import assert from 'node:assert/strict';
 import type { AddressInfo } from 'node:net';
 import { after, before, test } from 'node:test';
+import { sign } from 'cookie-signature';
 
 import { createApp } from '../src/app.js';
+import {
+  getSessionSecret,
+  sessionCookieName,
+  sessionMaxAgeMilliseconds,
+} from '../src/config/security.js';
+import { disconnectSessionStore } from '../src/config/session.js';
 import { prisma } from '../src/utils/prisma.js';
 
 const testUserId = '90000000-0000-4000-8000-000000000001';
+const testSessionId = 'phase6-integration-session';
 const interstellarId = '10000000-0000-4000-8000-000000000001';
 const nativeFetch = globalThis.fetch;
 const server = createApp().listen(0);
@@ -16,7 +24,13 @@ type JsonObject = Record<string, unknown>;
 
 const cleanupTestData = async () => {
   await prisma.auditLog.deleteMany({ where: { actorUserId: testUserId } });
+  await prisma.userSession.deleteMany({ where: { sid: testSessionId } });
   await prisma.user.deleteMany({ where: { id: testUserId } });
+};
+
+const getSessionCookie = () => {
+  const signedSessionId = sign(testSessionId, getSessionSecret());
+  return `${sessionCookieName}=${encodeURIComponent(`s:${signedSessionId}`)}`;
 };
 
 const api = async (path: string, init: RequestInit = {}) => {
@@ -24,7 +38,7 @@ const api = async (path: string, init: RequestInit = {}) => {
     ...init,
     headers: {
       'content-type': 'application/json',
-      'x-user-id': testUserId,
+      Cookie: getSessionCookie(),
       ...init.headers,
     },
   });
@@ -44,6 +58,23 @@ before(async () => {
       displayName: 'Phase 5 Integration Test',
     },
   });
+  await prisma.userSession.create({
+    data: {
+      sid: testSessionId,
+      sess: {
+        cookie: {
+          originalMaxAge: sessionMaxAgeMilliseconds,
+          expires: new Date(Date.now() + sessionMaxAgeMilliseconds).toISOString(),
+          httpOnly: true,
+          path: '/',
+          sameSite: 'lax',
+          secure: false,
+        },
+        passport: { user: testUserId },
+      },
+      expire: new Date(Date.now() + sessionMaxAgeMilliseconds),
+    },
+  });
 });
 
 after(async () => {
@@ -52,6 +83,7 @@ after(async () => {
   await new Promise<void>((resolve, reject) => {
     server.close((error) => (error ? reject(error) : resolve()));
   });
+  await disconnectSessionStore();
   await prisma.$disconnect();
 });
 
@@ -67,6 +99,17 @@ test('Phase 5 API workflow', async (t) => {
     assert.equal(unauthorized.status, 401);
     const body = (await unauthorized.json()) as { error: { code: string } };
     assert.equal(body.error.code, 'AUTHENTICATION_REQUIRED');
+
+    const headerOnly = await nativeFetch(`${baseUrl}/library`, {
+      headers: { 'x-user-id': testUserId },
+    });
+    assert.equal(headerOnly.status, 401);
+
+    const profile = await api('/auth/me');
+    assert.equal(profile.response.status, 200);
+    const profileData = profile.body.data as { id: string; role: string };
+    assert.equal(profileData.id, testUserId);
+    assert.equal(profileData.role, 'USER');
   });
 
   await t.test('returns standard validation and missing-record errors', async () => {
@@ -320,5 +363,13 @@ test('Phase 5 API workflow', async (t) => {
 
     const removed = await api(`/library/${entry.id}`, { method: 'DELETE' });
     assert.equal(removed.response.status, 204);
+  });
+
+  await t.test('logs out and invalidates the server-side session', async () => {
+    const loggedOut = await api('/auth/logout', { method: 'POST' });
+    assert.equal(loggedOut.response.status, 204);
+
+    const profileAfterLogout = await api('/auth/me');
+    assert.equal(profileAfterLogout.response.status, 401);
   });
 });

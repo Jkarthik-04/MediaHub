@@ -149,6 +149,15 @@ model User {
   @@map("users")
 }
 
+model UserSession {
+  sid    String   @id @db.VarChar(255)
+  sess   Json     @db.JsonB
+  expire DateTime @db.Timestamptz(6)
+
+  @@index([expire])
+  @@map("user_sessions")
+}
+
 model MediaType {
   id                  Int                  @id @default(autoincrement()) @db.SmallInt
   code                String               @unique @db.VarChar(20)

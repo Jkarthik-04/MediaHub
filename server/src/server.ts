@@ -1,4 +1,5 @@
 import { createApp } from './app.js';
+import { disconnectSessionStore } from './config/session.js';
 import { prisma } from './utils/prisma.js';
 
 const port = Number(process.env.PORT ?? 3000);
@@ -17,7 +18,7 @@ const shutdown = (signal: NodeJS.Signals) => {
   console.info(`${signal} received; stopping MediaHub API.`);
 
   server.close(() => {
-    void prisma.$disconnect().finally(() => {
+    void Promise.all([prisma.$disconnect(), disconnectSessionStore()]).finally(() => {
       process.exit(0);
     });
   });
