@@ -69,6 +69,58 @@ test('Phase 5 API workflow', async (t) => {
     assert.equal(body.error.code, 'AUTHENTICATION_REQUIRED');
   });
 
+  await t.test('returns standard validation and missing-record errors', async () => {
+    const invalid = await api('/library', {
+      method: 'POST',
+      body: JSON.stringify({ mediaItemId: interstellarId, rating: 9.3 }),
+    });
+    assert.equal(invalid.response.status, 400);
+    const invalidError = invalid.body.error as {
+      code: string;
+      details: Array<{ field: string }>;
+      requestId: string;
+    };
+    assert.equal(invalidError.code, 'VALIDATION_ERROR');
+    assert.equal(invalidError.details[0]?.field, 'rating');
+    assert.ok(invalidError.requestId);
+
+    const missing = await api('/media/99999999-9999-4999-8999-999999999999');
+    assert.equal(missing.response.status, 404);
+    const missingError = missing.body.error as { code: string };
+    assert.equal(missingError.code, 'MEDIA_NOT_FOUND');
+  });
+
+  await t.test('paginates and sorts the media catalogue', async () => {
+    const firstPage = await api('/media?page=1&limit=2&sort=title:asc');
+    const secondPage = await api('/media?page=2&limit=2&sort=title:asc');
+    assert.equal(firstPage.response.status, 200);
+    assert.equal(secondPage.response.status, 200);
+
+    const firstData = firstPage.body.data as Array<{ id: string; title: string }>;
+    const secondData = secondPage.body.data as Array<{ id: string; title: string }>;
+    const firstMeta = firstPage.body.meta as {
+      page: number;
+      limit: number;
+      totalItems: number;
+      totalPages: number;
+    };
+    const secondMeta = secondPage.body.meta as { page: number; limit: number };
+
+    assert.equal(firstData.length, 2);
+    assert.equal(secondData.length, 2);
+    assert.equal(firstMeta.page, 1);
+    assert.equal(firstMeta.limit, 2);
+    assert.ok(firstMeta.totalItems >= 4);
+    assert.equal(firstMeta.totalPages, Math.ceil(firstMeta.totalItems / 2));
+    assert.equal(secondMeta.page, 2);
+    assert.equal(secondMeta.limit, 2);
+    assert.notEqual(firstData[0]?.id, secondData[0]?.id);
+    assert.deepEqual(
+      firstData.map((item) => item.title),
+      firstData.map((item) => item.title).toSorted((left, right) => left.localeCompare(right)),
+    );
+  });
+
   await t.test('normalizes an Open Library discovery response', async () => {
     globalThis.fetch = async (input, init) => {
       const url = new URL(input instanceof Request ? input.url : input.toString());
@@ -144,6 +196,73 @@ test('Phase 5 API workflow', async (t) => {
     };
     assert.equal(confirmedData.status, 'COMPLETED');
     assert.equal(confirmedData.counts.skipped, 1);
+  });
+
+  await t.test('rolls back every import decision when confirmation fails', async () => {
+    const preview = await api('/imports/preview', {
+      method: 'POST',
+      body: JSON.stringify({
+        items: [
+          {
+            provider: 'open-library',
+            externalId: 'OL-PHASE5-ROLLBACK-1',
+            mediaType: 'BOOK',
+            title: 'Rollback Candidate One',
+            alternateTitles: [],
+            genres: [],
+            sourceUrl: 'https://openlibrary.org/works/OL-PHASE5-ROLLBACK-1',
+          },
+          {
+            provider: 'open-library',
+            externalId: 'OL-PHASE5-ROLLBACK-2',
+            mediaType: 'BOOK',
+            title: 'Rollback Candidate Two',
+            alternateTitles: [],
+            genres: [],
+            sourceUrl: 'https://openlibrary.org/works/OL-PHASE5-ROLLBACK-2',
+          },
+        ],
+        defaultLibraryStatus: 'PLANNED',
+      }),
+    });
+    assert.equal(preview.response.status, 201);
+    const previewData = preview.body.data as {
+      id: string;
+      candidates: Array<{ id: string }>;
+    };
+    assert.equal(previewData.candidates.length, 2);
+
+    const failedConfirmation = await api(`/imports/${previewData.id}/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({
+        decisions: [
+          { candidateId: previewData.candidates[0]?.id, action: 'SKIP' },
+          {
+            candidateId: previewData.candidates[1]?.id,
+            action: 'REUSE',
+            mediaItemId: '99999999-9999-4999-8999-999999999999',
+          },
+        ],
+      }),
+    });
+    assert.equal(failedConfirmation.response.status, 400);
+    const failure = failedConfirmation.body.error as { code: string };
+    assert.equal(failure.code, 'INVALID_REUSE_TARGET');
+
+    const unchanged = await api(`/imports/${previewData.id}`);
+    assert.equal(unchanged.response.status, 200);
+    const unchangedData = unchanged.body.data as {
+      status: string;
+      counts: { skipped: number; imported: number };
+      candidates: Array<{ decision: string }>;
+    };
+    assert.equal(unchangedData.status, 'PREVIEW_READY');
+    assert.equal(unchangedData.counts.skipped, 0);
+    assert.equal(unchangedData.counts.imported, 0);
+    assert.deepEqual(
+      unchangedData.candidates.map((candidate) => candidate.decision),
+      ['UNDECIDED', 'UNDECIDED'],
+    );
   });
 
   await t.test('manages library progress and updates dashboard totals', async () => {
