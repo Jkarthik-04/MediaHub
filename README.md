@@ -6,10 +6,11 @@ will supply most catalogue data, while manual entry remains available for niche 
 
 ## Current status
 
-Planning Phases 1-3 and the Phase 4 application/database foundation are complete. The
-repository currently includes working React and Express applications, a PostgreSQL
-container, the 15-table Prisma schema, its initial migration, repeatable seed data, health
-checks, and continuous integration.
+Planning Phases 1-3, the Phase 4 application/database foundation, and the Phase 5 core API
+are complete. The repository includes working React and Express applications, PostgreSQL,
+the 15-table Prisma schema, repeatable seed data, media/library/progress/dashboard APIs,
+Jikan/OMDb/Open Library discovery, staged imports, database views/function/trigger/indexes,
+integration tests, and continuous integration.
 
 ## Prerequisites
 
@@ -81,6 +82,7 @@ docker compose stop postgres
 | `npm run db:validate` | Validate the Prisma schema |
 | `npm run db:generate` | Generate the Prisma client |
 | `npm run db:migrate` | Apply development migrations |
+| `npm run db:deploy` | Apply existing migrations non-interactively, as CI/deployment does |
 | `npm run db:seed` | Insert or update the sample data |
 | `npm run db:studio` | Open Prisma Studio |
 
@@ -94,13 +96,15 @@ Run the same checks used by GitHub Actions:
 
 ```bash
 npm run db:generate
+npm test
 npm run lint
 npm run typecheck
 npm run build
 npm run format:check
 ```
 
-The CI workflow runs these checks for pull requests and changes to `dev` or `main`.
+The CI workflow starts PostgreSQL, applies migrations, seeds it, and runs these checks for
+pull requests and changes to `dev` or `main`.
 
 ## Environment variables
 
@@ -108,8 +112,8 @@ The CI workflow runs these checks for pull requests and changes to `dev` or `mai
 never commit API keys, OAuth secrets, session secrets, or production database credentials.
 
 The default development values work with the PostgreSQL service in `docker-compose.yml`.
-TMDB, Google Books, and Google OAuth variables may remain empty until their implementation
-phases.
+`OMDB_API_KEY` is required only for movie discovery. Jikan and Open Library searches need
+no API key. Google OAuth variables may remain empty until Phase 6.
 
 ## Repository structure
 
@@ -130,4 +134,6 @@ docs/             Planning and database documentation
 - [REST API contract](docs/phase-2/API_CONTRACT.md)
 - [Database design and ER diagram](docs/phase-3/DATABASE_DESIGN.md)
 - [Data dictionary](docs/phase-3/DATA_DICTIONARY.md)
+- [Implemented Phase 5 API reference](docs/phase-5/API_REFERENCE.md)
+- [Query-plan and database-object evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md)
 - [Individual Git collaboration guide](docs/GIT_COLLABORATION_GUIDE.md)
