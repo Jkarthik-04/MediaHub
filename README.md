@@ -134,6 +134,7 @@ docs/             Planning and database documentation
 - [REST API contract](docs/phase-2/API_CONTRACT.md)
 - [Database design and ER diagram](docs/phase-3/DATABASE_DESIGN.md)
 - [Data dictionary](docs/phase-3/DATA_DICTIONARY.md)
+- [Phase 4 foundation and setup](docs/phase-4/FOUNDATION.md)
 - [Implemented Phase 5 API reference](docs/phase-5/API_REFERENCE.md)
 - [Query-plan and database-object evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md)
 - [Individual Git collaboration guide](docs/GIT_COLLABORATION_GUIDE.md)
