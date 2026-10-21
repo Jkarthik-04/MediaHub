@@ -8,6 +8,8 @@ export const libraryListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   section: z.enum(['READING', 'WATCHING']).optional(),
+  type: z.enum(['MOVIE', 'TV', 'ANIME', 'MANGA', 'BOOK']).optional(),
+q: z.string().trim().min(1).max(300).optional(),
   status: libraryStatusSchema.optional(),
   genre: z.string().trim().min(1).max(100).optional(),
   sort: z.enum(['updatedAt:desc', 'title:asc', 'rating:desc']).default('updatedAt:desc'),
