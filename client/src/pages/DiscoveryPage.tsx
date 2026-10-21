@@ -1,13 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { PageHeader } from '../components/PageHeader';
+
 import { EmptyState } from '../components/PageStates';
+import { PageHeader } from '../components/PageHeader';
 import {
-  addLibraryEntry,
-  getLibrary,
-  searchMedia,
+  confirmImport,
+  previewImport,
+  searchDiscovery,
+  type DiscoveryMedia,
   type LibraryStatus,
-  type MediaCatalogueItem,
-  type MediaTypeCode,
 } from '../services/mediahub-api';
 
 const PAGE_SIZE = 12;
@@ -15,105 +15,32 @@ const PAGE_SIZE = 12;
 export function DiscoveryPage() {
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<'' | 'BOOK' | 'MANGA'>('');
+  const [selectedType, setSelectedType] = useState<'BOOK' | 'MANGA'>('BOOK');
   const [libraryStatus, setLibraryStatus] = useState<LibraryStatus>('PLANNED');
-
-  const [results, setResults] = useState<MediaCatalogueItem[]>([]);
+  const [results, setResults] = useState<DiscoveryMedia[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [actionError, setActionError] = useState('');
   const [message, setMessage] = useState('');
-  const [addingId, setAddingId] = useState<string | null>(null);
+  const [importingId, setImportingId] = useState<string | null>(null);
 
-  const [libraryMediaIds, setLibraryMediaIds] = useState<Set<string>>(() => new Set<string>());
-  const [libraryLoading, setLibraryLoading] = useState(true);
-  const [libraryCheckError, setLibraryCheckError] = useState('');
-
-  const [searchVersion, setSearchVersion] = useState(0);
-
-  // Load all reading-library entries so existing titles can be identified.
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadLibraryIds() {
-      setLibraryLoading(true);
-      setLibraryCheckError('');
-
-      try {
-        const firstPage = await getLibrary({
-          section: 'READING',
-          page: 1,
-          limit: 100,
-          sort: 'updatedAt:desc',
-        });
-
-        const entries = [...firstPage.data];
-
-        for (let currentPage = 2; currentPage <= firstPage.meta.totalPages; currentPage += 1) {
-          const response = await getLibrary({
-            section: 'READING',
-            page: currentPage,
-            limit: 100,
-            sort: 'updatedAt:desc',
-          });
-
-          entries.push(...response.data);
-        }
-
-        if (!cancelled) {
-          setLibraryMediaIds(new Set(entries.map((entry) => entry.mediaItem.id)));
-        }
-      } catch {
-        if (!cancelled) {
-          setLibraryCheckError(
-            'Could not check your existing library. The server will still prevent duplicate entries.',
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLibraryLoading(false);
-        }
-      }
-    }
-
-    void loadLibraryIds();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Search the existing media catalogue.
-  useEffect(() => {
-    if (!submittedQuery) {
-      setResults([]);
-      setTotalPages(1);
-      setTotalItems(0);
-      setLoading(false);
-      return;
-    }
+    if (!submittedQuery) return;
 
     let cancelled = false;
-
     async function loadResults() {
       setLoading(true);
       setError('');
-      setActionError('');
       setMessage('');
-
       try {
-        const response = await searchMedia({
+        const response = await searchDiscovery({
           q: submittedQuery,
-          ...(selectedType ? { type: selectedType as MediaTypeCode } : {}),
+          type: selectedType,
           page,
           limit: PAGE_SIZE,
-          sort: 'title:asc',
         });
-
         if (!cancelled) {
           setResults(response.data);
           setTotalPages(Math.max(1, response.meta.totalPages));
@@ -122,118 +49,79 @@ export function DiscoveryPage() {
       } catch (caughtError) {
         if (!cancelled) {
           setResults([]);
-          setTotalPages(1);
           setTotalItems(0);
+          setTotalPages(1);
           setError(
-            caughtError instanceof Error
-              ? caughtError.message
-              : 'Unable to search the media catalogue.',
+            caughtError instanceof Error ? caughtError.message : 'Unable to search providers.',
           );
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
     void loadResults();
-
     return () => {
       cancelled = true;
     };
-  }, [submittedQuery, selectedType, page, searchVersion]);
+  }, [submittedQuery, selectedType, page]);
 
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     const trimmedQuery = query.trim();
-
     if (!trimmedQuery) {
       setError('Enter a title to search.');
-      setResults([]);
-      setSubmittedQuery('');
       return;
     }
-
     setPage(1);
     setSubmittedQuery(trimmedQuery);
-    setSearchVersion((version) => version + 1);
   }
 
-  // Add a title while handling titles already in the library.
-  async function handleAdd(item: MediaCatalogueItem) {
-    if (libraryMediaIds.has(item.id)) {
-      setActionError('');
-      setMessage(`${item.title} is already in your library.`);
-      return;
-    }
-
-    setAddingId(item.id);
-    setActionError('');
+  async function handleImport(item: DiscoveryMedia) {
+    setImportingId(item.externalId);
+    setError('');
     setMessage('');
-
     try {
-      await addLibraryEntry(item.id, libraryStatus);
+      const preview = await previewImport(item, libraryStatus);
+      const candidate = preview.data.candidates[0];
+      if (!candidate) throw new Error('The import preview did not contain a title.');
 
-      setLibraryMediaIds((current) => {
-        const next = new Set(current);
-        next.add(item.id);
-        return next;
+      const existingMatch = candidate.proposedAction !== 'CREATE' ? candidate.match : null;
+      await confirmImport(preview.data.id, {
+        candidateId: candidate.id,
+        action: existingMatch ? 'REUSE' : 'CREATE',
+        ...(existingMatch ? { mediaItemId: existingMatch.id } : {}),
       });
-
       setMessage(
-        `${item.title} was added to your library with status ${libraryStatus.replaceAll('_', ' ')}.`,
+        existingMatch
+          ? `${item.title} was added using the existing MediaHub title.`
+          : `${item.title} was imported and added to your library.`,
       );
     } catch (caughtError) {
-      const errorMessage =
-        caughtError instanceof Error
-          ? caughtError.message
-          : 'Unable to add this title to your library.';
-
-      if (errorMessage.toLowerCase().includes('already in your library')) {
-        setLibraryMediaIds((current) => {
-          const next = new Set(current);
-          next.add(item.id);
-          return next;
-        });
-
-        setActionError('');
-        setMessage(`${item.title} is already in your library.`);
-      } else {
-        setActionError(errorMessage);
-      }
+      setError(caughtError instanceof Error ? caughtError.message : 'Unable to import this title.');
     } finally {
-      setAddingId(null);
+      setImportingId(null);
     }
-  }
-
-  function changeType(value: '' | 'BOOK' | 'MANGA') {
-    setSelectedType(value);
-    setPage(1);
   }
 
   return (
     <div className="page-stack">
       <PageHeader eyebrow="Find something new" title="Discovery and import">
-        Search the existing catalogue, inspect titles, and add books or manga to your personal
-        library.
+        Search Open Library for books or Jikan for manga, then add a title to your library.
       </PageHeader>
 
       <section className="surface">
         <form onSubmit={handleSearch}>
           <label htmlFor="discovery-query">Search titles</label>
-
           <div className="control-row">
             <input
               id="discovery-query"
               type="search"
-              maxLength={300}
+              maxLength={200}
               placeholder="Enter a book or manga title"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
-
             <button className="button button-primary" type="submit" disabled={loading}>
               {loading ? 'Searching…' : 'Search'}
             </button>
@@ -243,11 +131,13 @@ export function DiscoveryPage() {
             <label>
               Media type
               <select
-                aria-label="Filter by media type"
+                aria-label="Media type"
                 value={selectedType}
-                onChange={(event) => changeType(event.target.value as '' | 'BOOK' | 'MANGA')}
+                onChange={(event) => {
+                  setSelectedType(event.target.value as 'BOOK' | 'MANGA');
+                  setPage(1);
+                }}
               >
-                <option value="">Books and Manga</option>
                 <option value="BOOK">Books</option>
                 <option value="MANGA">Manga</option>
               </select>
@@ -256,7 +146,7 @@ export function DiscoveryPage() {
             <label>
               Default library status
               <select
-                aria-label="Default status for added titles"
+                aria-label="Default status for imported titles"
                 value={libraryStatus}
                 onChange={(event) => setLibraryStatus(event.target.value as LibraryStatus)}
               >
@@ -271,33 +161,11 @@ export function DiscoveryPage() {
         </form>
       </section>
 
-      {libraryCheckError && (
-        <div className="surface" role="status">
-          {libraryCheckError}
-        </div>
-      )}
-
       {error && (
-        <section className="surface" role="alert">
-          <h2>Search failed</h2>
-          <p>{error}</p>
-          <button
-            className="tab"
-            type="button"
-            onClick={() => setSearchVersion((version) => version + 1)}
-            disabled={!submittedQuery || loading}
-          >
-            Try again
-          </button>
-        </section>
-      )}
-
-      {actionError && (
         <div className="surface" role="alert">
-          {actionError}
+          {error}
         </div>
       )}
-
       {message && (
         <div className="surface" role="status">
           {message}
@@ -306,104 +174,78 @@ export function DiscoveryPage() {
 
       {loading ? (
         <div className="surface" role="status">
-          Searching the catalogue…
+          Searching the provider…
         </div>
-      ) : submittedQuery && !error && results.length === 0 ? (
-        <EmptyState title="No matching titles found">
-          Try another search term or change the media type filter.
-        </EmptyState>
+      ) : submittedQuery && results.length === 0 && !error ? (
+        <EmptyState title="No matching titles found">Try another title or search term.</EmptyState>
       ) : results.length > 0 ? (
         <>
           <section className="page-stack" aria-label="Search results">
             <p>
-              Found {totalItems} matching title
-              {totalItems === 1 ? '' : 's'}.
+              Found {totalItems} matching title{totalItems === 1 ? '' : 's'}.
             </p>
-
-            {results.map((item) => {
-              const alreadyInLibrary = libraryMediaIds.has(item.id);
-
-              return (
-                <article className="surface" key={item.id}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: '16px',
-                      alignItems: 'flex-start',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    {item.coverUrl ? (
-                      <img
-                        src={item.coverUrl}
-                        alt={`Cover of ${item.title}`}
-                        loading="lazy"
-                        style={{
-                          width: '100px',
-                          height: '140px',
-                          objectFit: 'cover',
-                          borderRadius: '8px',
-                        }}
-                      />
-                    ) : (
-                      <div
-                        aria-label="No cover available"
-                        style={{
-                          width: '100px',
-                          height: '140px',
-                          display: 'grid',
-                          placeItems: 'center',
-                          borderRadius: '8px',
-                          background: 'var(--color-surface-secondary, #eee)',
-                        }}
-                      >
-                        No cover
-                      </div>
-                    )}
-
-                    <div style={{ flex: 1, minWidth: '200px' }}>
-                      <h2>{item.title}</h2>
-
-                      <p>
-                        {item.mediaType.name}
-                        {item.releaseDate ? ` · ${item.releaseDate.slice(0, 10)}` : ''}
-                      </p>
-
-                      {item.description && <p>{item.description}</p>}
-
-                      <p>
-                        Genres:{' '}
-                        {item.genres.map((genre) => genre.name).join(', ') || 'Not specified'}
-                      </p>
-
-                      <p>Total units: {item.totalUnits ?? 'Unknown'}</p>
-
-                      <button
-                        className="button button-primary"
-                        type="button"
-                        disabled={libraryLoading || addingId === item.id || alreadyInLibrary}
-                        onClick={() => void handleAdd(item)}
-                      >
-                        {libraryLoading
-                          ? 'Checking library…'
-                          : addingId === item.id
-                            ? 'Adding…'
-                            : alreadyInLibrary
-                              ? 'Already in Library'
-                              : 'Add to Library'}
-                      </button>
+            {results.map((item) => (
+              <article className="surface" key={`${item.provider}:${item.externalId}`}>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '16px',
+                    alignItems: 'flex-start',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  {item.coverUrl ? (
+                    <img
+                      src={item.coverUrl}
+                      alt={`Cover of ${item.title}`}
+                      loading="lazy"
+                      style={{
+                        width: '100px',
+                        height: '140px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      aria-label="No cover available"
+                      style={{
+                        width: '100px',
+                        height: '140px',
+                        display: 'grid',
+                        placeItems: 'center',
+                        borderRadius: '8px',
+                        background: 'var(--color-surface-secondary, #eee)',
+                      }}
+                    >
+                      No cover
                     </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: '200px' }}>
+                    <h2>{item.title}</h2>
+                    <p>
+                      {item.mediaType}
+                      {item.releaseDate ? ` · ${item.releaseDate.slice(0, 10)}` : ''}
+                    </p>
+                    {item.description && <p>{item.description}</p>}
+                    <p>Genres: {item.genres.join(', ') || 'Not specified'}</p>
+                    <button
+                      className="button button-primary"
+                      type="button"
+                      disabled={importingId === item.externalId}
+                      onClick={() => void handleImport(item)}
+                    >
+                      {importingId === item.externalId ? 'Importing…' : 'Import to Library'}
+                    </button>
                   </div>
-                </article>
-              );
-            })}
+                </div>
+              </article>
+            ))}
           </section>
-
           <section className="surface">
             <p>
               Page {page} of {totalPages}
             </p>
-
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 className="tab"
@@ -413,7 +255,6 @@ export function DiscoveryPage() {
               >
                 Previous
               </button>
-
               <button
                 className="tab"
                 type="button"
@@ -426,8 +267,8 @@ export function DiscoveryPage() {
           </section>
         </>
       ) : (
-        <EmptyState title="Search the catalogue">
-          Enter a title above to find books and manga to add to your library.
+        <EmptyState title="Search external catalogues">
+          Enter a book or manga title to discover and import it.
         </EmptyState>
       )}
     </div>
