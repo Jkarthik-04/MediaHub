@@ -1,4 +1,3 @@
-
 import { apiClient } from './api-client';
 
 export type ApiEnvelope<T> = {
@@ -10,21 +9,13 @@ export type ApiInfo = {
   version: string;
 };
 
-export type LibraryStatus =
-  | 'PLANNED'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'ON_HOLD'
-  | 'DROPPED';
+export type LibraryStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD' | 'DROPPED';
 
 export type LibrarySection = 'READING' | 'WATCHING';
 
 export type MediaTypeCode = 'MOVIE' | 'TV' | 'ANIME' | 'MANGA' | 'BOOK';
 
-export type LibrarySort =
-  | 'updatedAt:desc'
-  | 'title:asc'
-  | 'rating:desc';
+export type LibrarySort = 'updatedAt:desc' | 'title:asc' | 'rating:desc';
 
 export type LibraryEntry = {
   id: string;
@@ -83,12 +74,9 @@ export type LibraryListResponse = ApiEnvelope<LibraryEntry[]> & {
 };
 
 /** Public endpoint, retained as a connectivity check. */
-export const getApiInfo = () =>
-  apiClient<ApiEnvelope<ApiInfo>>('');
+export const getApiInfo = () => apiClient<ApiEnvelope<ApiInfo>>('');
 
-export async function getLibrary(
-  query: LibraryListQuery = {},
-): Promise<LibraryListResponse> {
+export async function getLibrary(query: LibraryListQuery = {}): Promise<LibraryListResponse> {
   const params = new URLSearchParams();
 
   if (query.section) params.set('section', query.section);
@@ -118,10 +106,7 @@ export type LibraryProgressBody = {
   note?: string;
 };
 
-export function updateLibraryProgress(
-  entryId: string,
-  body: LibraryProgressBody,
-) {
+export function updateLibraryProgress(entryId: string, body: LibraryProgressBody) {
   return apiClient<{
     data: LibraryEntry;
     progressEvent: unknown;
@@ -137,26 +122,17 @@ export type LibraryEntryUpdate = {
   notes?: string | null;
 };
 
-export function updateLibraryEntry(
-  entryId: string,
-  body: LibraryEntryUpdate,
-) {
-  return apiClient<{ data: LibraryEntry }>(
-    `/library/${encodeURIComponent(entryId)}`,
-    {
-      method: 'PATCH',
-      body,
-    },
-  );
+export function updateLibraryEntry(entryId: string, body: LibraryEntryUpdate) {
+  return apiClient<{ data: LibraryEntry }>(`/library/${encodeURIComponent(entryId)}`, {
+    method: 'PATCH',
+    body,
+  });
 }
 
 export function deleteLibraryEntry(entryId: string) {
-  return apiClient<void>(
-    `/library/${encodeURIComponent(entryId)}`,
-    {
-      method: 'DELETE',
-    },
-  );
+  return apiClient<void>(`/library/${encodeURIComponent(entryId)}`, {
+    method: 'DELETE',
+  });
 }
 
 export type MediaCatalogueItem = {
@@ -178,10 +154,7 @@ export type MediaCatalogueItem = {
   }>;
 };
 
-export type MediaCatalogueSort =
-  | 'title:asc'
-  | 'title:desc'
-  | 'createdAt:desc';
+export type MediaCatalogueSort = 'title:asc' | 'title:desc' | 'createdAt:desc';
 
 export type MediaCatalogueResponse = ApiEnvelope<MediaCatalogueItem[]> & {
   meta: {
@@ -201,9 +174,7 @@ export type MediaCatalogueQuery = {
   sort?: MediaCatalogueSort;
 };
 
-export async function searchMedia(
-  query: MediaCatalogueQuery,
-): Promise<MediaCatalogueResponse> {
+export async function searchMedia(query: MediaCatalogueQuery): Promise<MediaCatalogueResponse> {
   const params = new URLSearchParams();
 
   if (query.q?.trim()) params.set('q', query.q.trim());
@@ -214,15 +185,10 @@ export async function searchMedia(
 
   const queryString = params.toString();
 
-  return apiClient<MediaCatalogueResponse>(
-    `/media${queryString ? `?${queryString}` : ''}`,
-  );
+  return apiClient<MediaCatalogueResponse>(`/media${queryString ? `?${queryString}` : ''}`);
 }
 
-export function addLibraryEntry(
-  mediaItemId: string,
-  status: LibraryStatus = 'PLANNED',
-) {
+export function addLibraryEntry(mediaItemId: string, status: LibraryStatus = 'PLANNED') {
   return apiClient<ApiEnvelope<LibraryEntry>>('/library', {
     method: 'POST',
     body: {

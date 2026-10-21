@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/PageStates';
@@ -16,13 +15,7 @@ import {
 
 const PAGE_SIZE = 20;
 
-const statuses: LibraryStatus[] = [
-  'PLANNED',
-  'IN_PROGRESS',
-  'COMPLETED',
-  'ON_HOLD',
-  'DROPPED',
-];
+const statuses: LibraryStatus[] = ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD', 'DROPPED'];
 
 function getProgressUnit(entry: LibraryEntry): string {
   switch (entry.mediaItem.mediaType.progressMode) {
@@ -71,8 +64,7 @@ export function LibraryPage({
   description: string;
   tabs: string[];
 }) {
-  const section: LibrarySection =
-    title.toLowerCase() === 'reading' ? 'READING' : 'WATCHING';
+  const section: LibrarySection = title.toLowerCase() === 'reading' ? 'READING' : 'WATCHING';
 
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
   const [activeTab, setActiveTab] = useState(tabs[0] ?? '');
@@ -87,12 +79,8 @@ export function LibraryPage({
   const [retryCount, setRetryCount] = useState(0);
 
   // Reading progress state
-  const [progressDrafts, setProgressDrafts] = useState<
-    Record<string, string>
-  >({});
-  const [savingProgressId, setSavingProgressId] = useState<string | null>(
-    null,
-  );
+  const [progressDrafts, setProgressDrafts] = useState<Record<string, string>>({});
+  const [savingProgressId, setSavingProgressId] = useState<string | null>(null);
   const [progressError, setProgressError] = useState('');
   const [progressMessage, setProgressMessage] = useState('');
 
@@ -131,10 +119,7 @@ export function LibraryPage({
           setProgressDrafts((current) => ({
             ...current,
             ...Object.fromEntries(
-              response.data.map((entry) => [
-                entry.id,
-                String(entry.progressValue ?? 0),
-              ]),
+              response.data.map((entry) => [entry.id, String(entry.progressValue ?? 0)]),
             ),
           }));
 
@@ -143,9 +128,7 @@ export function LibraryPage({
       } catch (caughtError) {
         if (!cancelled) {
           setError(
-            caughtError instanceof Error
-              ? caughtError.message
-              : 'Could not load your library.',
+            caughtError instanceof Error ? caughtError.message : 'Could not load your library.',
           );
         }
       } finally {
@@ -160,21 +143,11 @@ export function LibraryPage({
     return () => {
       cancelled = true;
     };
-  }, [
-    section,
-    activeTab,
-    search,
-    status,
-    genre,
-    sort,
-    page,
-    retryCount,
-  ]);
+  }, [section, activeTab, search, status, genre, sort, page, retryCount]);
 
   // Save reading progress.
   async function saveProgress(entry: LibraryEntry) {
-    const rawValue =
-      progressDrafts[entry.id] ?? String(entry.progressValue ?? 0);
+    const rawValue = progressDrafts[entry.id] ?? String(entry.progressValue ?? 0);
     const value = Number(rawValue);
 
     if (rawValue.trim() === '' || !Number.isFinite(value) || value < 0) {
@@ -184,9 +157,7 @@ export function LibraryPage({
     }
 
     const maximum =
-      entry.mediaItem.mediaType.progressMode === 'PERCENTAGE'
-        ? 100
-        : entry.mediaItem.totalUnits;
+      entry.mediaItem.mediaType.progressMode === 'PERCENTAGE' ? 100 : entry.mediaItem.totalUnits;
 
     if (maximum !== null && maximum !== undefined && value > maximum) {
       setProgressError(`Progress cannot be greater than ${maximum}.`);
@@ -206,9 +177,7 @@ export function LibraryPage({
       setRetryCount((count) => count + 1);
     } catch (caughtError) {
       setProgressError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : 'Unable to save reading progress.',
+        caughtError instanceof Error ? caughtError.message : 'Unable to save reading progress.',
       );
     } finally {
       setSavingProgressId(null);
@@ -231,14 +200,9 @@ export function LibraryPage({
 
     if (
       rating !== null &&
-      (!Number.isFinite(rating) ||
-        rating < 0 ||
-        rating > 10 ||
-        !Number.isInteger(rating * 2))
+      (!Number.isFinite(rating) || rating < 0 || rating > 10 || !Number.isInteger(rating * 2))
     ) {
-      setEntryActionError(
-        'Rating must be between 0 and 10 in increments of 0.5.',
-      );
+      setEntryActionError('Rating must be between 0 and 10 in increments of 0.5.');
       setEntryActionMessage('');
       return;
     }
@@ -265,9 +229,7 @@ export function LibraryPage({
       setRetryCount((count) => count + 1);
     } catch (caughtError) {
       setEntryActionError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : 'Unable to update this entry.',
+        caughtError instanceof Error ? caughtError.message : 'Unable to update this entry.',
       );
     } finally {
       setSavingEntryId(null);
@@ -276,9 +238,7 @@ export function LibraryPage({
 
   // Remove an entry after confirmation.
   async function removeEntry(entry: LibraryEntry) {
-    const confirmed = window.confirm(
-      `Remove "${entry.mediaItem.title}" from your library?`,
-    );
+    const confirmed = window.confirm(`Remove "${entry.mediaItem.title}" from your library?`);
 
     if (!confirmed) return;
 
@@ -295,9 +255,7 @@ export function LibraryPage({
       setRetryCount((count) => count + 1);
     } catch (caughtError) {
       setEntryActionError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : 'Unable to remove this entry.',
+        caughtError instanceof Error ? caughtError.message : 'Unable to remove this entry.',
       );
     } finally {
       setSavingEntryId(null);
@@ -320,8 +278,7 @@ export function LibraryPage({
     setSearch('');
   }
 
-  const hasActiveFilters =
-    search.trim() !== '' || status !== '' || genre.trim() !== '';
+  const hasActiveFilters = search.trim() !== '' || status !== '' || genre.trim() !== '';
 
   return (
     <div className="page-stack">
@@ -330,11 +287,7 @@ export function LibraryPage({
       </PageHeader>
 
       <section className="surface">
-        <div
-          className="tab-list"
-          role="tablist"
-          aria-label={`${title} media types`}
-        >
+        <div className="tab-list" role="tablist" aria-label={`${title} media types`}>
           {tabs.map((tab) => (
             <button
               aria-selected={activeTab === tab}
@@ -428,11 +381,7 @@ export function LibraryPage({
         <section className="surface" role="alert">
           <h2>Unable to load your library</h2>
           <p>{error}</p>
-          <button
-            className="tab"
-            onClick={() => setRetryCount((count) => count + 1)}
-            type="button"
-          >
+          <button className="tab" onClick={() => setRetryCount((count) => count + 1)} type="button">
             Try again
           </button>
         </section>
@@ -456,7 +405,7 @@ export function LibraryPage({
               const maximum =
                 entry.mediaItem.mediaType.progressMode === 'PERCENTAGE'
                   ? 100
-                  : entry.mediaItem.totalUnits ?? undefined;
+                  : (entry.mediaItem.totalUnits ?? undefined);
 
               return (
                 <article className="surface" key={entry.id}>
@@ -486,24 +435,20 @@ export function LibraryPage({
                       <h2>{entry.mediaItem.title}</h2>
 
                       <p>
-                        {entry.mediaItem.mediaType.name} ·{' '}
-                        {entry.status.replaceAll('_', ' ')}
+                        {entry.mediaItem.mediaType.name} · {entry.status.replaceAll('_', ' ')}
                       </p>
 
                       <p>
                         Genres:{' '}
-                        {entry.mediaItem.genres
-                          .map((item) => item.name)
-                          .join(', ') || 'Not specified'}
+                        {entry.mediaItem.genres.map((item) => item.name).join(', ') ||
+                          'Not specified'}
                       </p>
 
                       <p>
                         Progress: {entry.progressValue ?? 0}
                         {unit === '%' ? '%' : ` ${unit}`} /{' '}
                         {entry.mediaItem.totalUnits ?? 'Unknown total'}
-                        {entry.mediaItem.totalUnits !== null && unit !== '%'
-                          ? ` ${unit}`
-                          : ''}
+                        {entry.mediaItem.totalUnits !== null && unit !== '%' ? ` ${unit}` : ''}
                       </p>
 
                       {entry.currentUnit && (
@@ -527,9 +472,7 @@ export function LibraryPage({
                             marginTop: '16px',
                           }}
                         >
-                          <label htmlFor={`progress-${entry.id}`}>
-                            Update progress ({unit})
-                          </label>
+                          <label htmlFor={`progress-${entry.id}`}>Update progress ({unit})</label>
 
                           <input
                             id={`progress-${entry.id}`}
@@ -538,10 +481,7 @@ export function LibraryPage({
                             min={0}
                             max={maximum}
                             step="any"
-                            value={
-                              progressDrafts[entry.id] ??
-                              String(entry.progressValue ?? 0)
-                            }
+                            value={progressDrafts[entry.id] ?? String(entry.progressValue ?? 0)}
                             onChange={(event) =>
                               setProgressDrafts((current) => ({
                                 ...current,
@@ -552,16 +492,11 @@ export function LibraryPage({
 
                           <button
                             className="tab"
-                            disabled={
-                              savingProgressId === entry.id ||
-                              savingEntryId === entry.id
-                            }
+                            disabled={savingProgressId === entry.id || savingEntryId === entry.id}
                             onClick={() => void saveProgress(entry)}
                             type="button"
                           >
-                            {savingProgressId === entry.id
-                              ? 'Saving…'
-                              : 'Save Progress'}
+                            {savingProgressId === entry.id ? 'Saving…' : 'Save Progress'}
                           </button>
                         </div>
                       )}
@@ -583,17 +518,13 @@ export function LibraryPage({
                               maxWidth: '480px',
                             }}
                           >
-                            <label htmlFor={`edit-status-${entry.id}`}>
-                              Status
-                            </label>
+                            <label htmlFor={`edit-status-${entry.id}`}>Status</label>
 
                             <select
                               id={`edit-status-${entry.id}`}
                               value={editStatus}
                               onChange={(event) =>
-                                setEditStatus(
-                                  event.target.value as LibraryStatus,
-                                )
+                                setEditStatus(event.target.value as LibraryStatus)
                               }
                             >
                               {statuses.map((item) => (
@@ -603,9 +534,7 @@ export function LibraryPage({
                               ))}
                             </select>
 
-                            <label htmlFor={`edit-rating-${entry.id}`}>
-                              Rating (0–10)
-                            </label>
+                            <label htmlFor={`edit-rating-${entry.id}`}>Rating (0–10)</label>
 
                             <input
                               id={`edit-rating-${entry.id}`}
@@ -614,24 +543,18 @@ export function LibraryPage({
                               max={10}
                               step={0.5}
                               value={editRating}
-                              onChange={(event) =>
-                                setEditRating(event.target.value)
-                              }
+                              onChange={(event) => setEditRating(event.target.value)}
                               placeholder="Enter rating"
                             />
 
-                            <label htmlFor={`edit-notes-${entry.id}`}>
-                              Notes
-                            </label>
+                            <label htmlFor={`edit-notes-${entry.id}`}>Notes</label>
 
                             <textarea
                               id={`edit-notes-${entry.id}`}
                               rows={3}
                               maxLength={5000}
                               value={editNotes}
-                              onChange={(event) =>
-                                setEditNotes(event.target.value)
-                              }
+                              onChange={(event) => setEditNotes(event.target.value)}
                               placeholder="Optional notes"
                             />
 
@@ -646,13 +569,9 @@ export function LibraryPage({
                                 className="tab"
                                 type="button"
                                 disabled={savingEntryId === entry.id}
-                                onClick={() =>
-                                  void saveEntryChanges(entry)
-                                }
+                                onClick={() => void saveEntryChanges(entry)}
                               >
-                                {savingEntryId === entry.id
-                                  ? 'Saving…'
-                                  : 'Save changes'}
+                                {savingEntryId === entry.id ? 'Saving…' : 'Save changes'}
                               </button>
 
                               <button
@@ -670,10 +589,7 @@ export function LibraryPage({
                             <button
                               className="tab"
                               type="button"
-                              disabled={
-                                savingEntryId === entry.id ||
-                                savingProgressId === entry.id
-                              }
+                              disabled={savingEntryId === entry.id || savingProgressId === entry.id}
                               onClick={() => beginEditing(entry)}
                             >
                               Edit
@@ -682,15 +598,10 @@ export function LibraryPage({
                             <button
                               className="tab"
                               type="button"
-                              disabled={
-                                savingEntryId === entry.id ||
-                                savingProgressId === entry.id
-                              }
+                              disabled={savingEntryId === entry.id || savingProgressId === entry.id}
                               onClick={() => void removeEntry(entry)}
                             >
-                              {savingEntryId === entry.id
-                                ? 'Removing…'
-                                : 'Remove'}
+                              {savingEntryId === entry.id ? 'Removing…' : 'Remove'}
                             </button>
                           </>
                         )}

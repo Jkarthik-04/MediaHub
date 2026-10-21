@@ -1,4 +1,3 @@
-
 import { useEffect, useState, type FormEvent } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/PageStates';
@@ -16,11 +15,8 @@ const PAGE_SIZE = 12;
 export function DiscoveryPage() {
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<
-    '' | 'BOOK' | 'MANGA'
-  >('');
-  const [libraryStatus, setLibraryStatus] =
-    useState<LibraryStatus>('PLANNED');
+  const [selectedType, setSelectedType] = useState<'' | 'BOOK' | 'MANGA'>('');
+  const [libraryStatus, setLibraryStatus] = useState<LibraryStatus>('PLANNED');
 
   const [results, setResults] = useState<MediaCatalogueItem[]>([]);
   const [page, setPage] = useState(1);
@@ -33,9 +29,7 @@ export function DiscoveryPage() {
   const [message, setMessage] = useState('');
   const [addingId, setAddingId] = useState<string | null>(null);
 
-  const [libraryMediaIds, setLibraryMediaIds] = useState<Set<string>>(
-    () => new Set<string>(),
-  );
+  const [libraryMediaIds, setLibraryMediaIds] = useState<Set<string>>(() => new Set<string>());
   const [libraryLoading, setLibraryLoading] = useState(true);
   const [libraryCheckError, setLibraryCheckError] = useState('');
 
@@ -59,11 +53,7 @@ export function DiscoveryPage() {
 
         const entries = [...firstPage.data];
 
-        for (
-          let currentPage = 2;
-          currentPage <= firstPage.meta.totalPages;
-          currentPage += 1
-        ) {
+        for (let currentPage = 2; currentPage <= firstPage.meta.totalPages; currentPage += 1) {
           const response = await getLibrary({
             section: 'READING',
             page: currentPage,
@@ -75,9 +65,7 @@ export function DiscoveryPage() {
         }
 
         if (!cancelled) {
-          setLibraryMediaIds(
-            new Set(entries.map((entry) => entry.mediaItem.id)),
-          );
+          setLibraryMediaIds(new Set(entries.map((entry) => entry.mediaItem.id)));
         }
       } catch {
         if (!cancelled) {
@@ -120,9 +108,7 @@ export function DiscoveryPage() {
       try {
         const response = await searchMedia({
           q: submittedQuery,
-          ...(selectedType
-            ? { type: selectedType as MediaTypeCode }
-            : {}),
+          ...(selectedType ? { type: selectedType as MediaTypeCode } : {}),
           page,
           limit: PAGE_SIZE,
           sort: 'title:asc',
@@ -205,9 +191,7 @@ export function DiscoveryPage() {
           ? caughtError.message
           : 'Unable to add this title to your library.';
 
-      if (
-        errorMessage.toLowerCase().includes('already in your library')
-      ) {
+      if (errorMessage.toLowerCase().includes('already in your library')) {
         setLibraryMediaIds((current) => {
           const next = new Set(current);
           next.add(item.id);
@@ -231,12 +215,9 @@ export function DiscoveryPage() {
 
   return (
     <div className="page-stack">
-      <PageHeader
-        eyebrow="Find something new"
-        title="Discovery and import"
-      >
-        Search the existing catalogue, inspect titles, and add books or
-        manga to your personal library.
+      <PageHeader eyebrow="Find something new" title="Discovery and import">
+        Search the existing catalogue, inspect titles, and add books or manga to your personal
+        library.
       </PageHeader>
 
       <section className="surface">
@@ -253,11 +234,7 @@ export function DiscoveryPage() {
               onChange={(event) => setQuery(event.target.value)}
             />
 
-            <button
-              className="button button-primary"
-              type="submit"
-              disabled={loading}
-            >
+            <button className="button button-primary" type="submit" disabled={loading}>
               {loading ? 'Searching…' : 'Search'}
             </button>
           </div>
@@ -268,9 +245,7 @@ export function DiscoveryPage() {
               <select
                 aria-label="Filter by media type"
                 value={selectedType}
-                onChange={(event) =>
-                  changeType(event.target.value as '' | 'BOOK' | 'MANGA')
-                }
+                onChange={(event) => changeType(event.target.value as '' | 'BOOK' | 'MANGA')}
               >
                 <option value="">Books and Manga</option>
                 <option value="BOOK">Books</option>
@@ -283,9 +258,7 @@ export function DiscoveryPage() {
               <select
                 aria-label="Default status for added titles"
                 value={libraryStatus}
-                onChange={(event) =>
-                  setLibraryStatus(event.target.value as LibraryStatus)
-                }
+                onChange={(event) => setLibraryStatus(event.target.value as LibraryStatus)}
               >
                 <option value="PLANNED">Planned</option>
                 <option value="IN_PROGRESS">In Progress</option>
@@ -393,17 +366,14 @@ export function DiscoveryPage() {
 
                       <p>
                         {item.mediaType.name}
-                        {item.releaseDate
-                          ? ` · ${item.releaseDate.slice(0, 10)}`
-                          : ''}
+                        {item.releaseDate ? ` · ${item.releaseDate.slice(0, 10)}` : ''}
                       </p>
 
                       {item.description && <p>{item.description}</p>}
 
                       <p>
                         Genres:{' '}
-                        {item.genres.map((genre) => genre.name).join(', ') ||
-                          'Not specified'}
+                        {item.genres.map((genre) => genre.name).join(', ') || 'Not specified'}
                       </p>
 
                       <p>Total units: {item.totalUnits ?? 'Unknown'}</p>
@@ -411,11 +381,7 @@ export function DiscoveryPage() {
                       <button
                         className="button button-primary"
                         type="button"
-                        disabled={
-                          libraryLoading ||
-                          addingId === item.id ||
-                          alreadyInLibrary
-                        }
+                        disabled={libraryLoading || addingId === item.id || alreadyInLibrary}
                         onClick={() => void handleAdd(item)}
                       >
                         {libraryLoading
