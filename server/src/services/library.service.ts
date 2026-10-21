@@ -20,13 +20,50 @@ import type {
 } from '../validation/library.validation.js';
 
 export const getUserLibrary = async (userId: string, query: LibraryListQuery) => {
-  const where: Prisma.LibraryEntryWhereInput = {
-    ...(query.status ? { status: query.status } : {}),
-    ...(query.section ? { mediaItem: { mediaType: { section: query.section } } } : {}),
+  const mediaItemWhere: Prisma.MediaItemWhereInput = {
+    ...(query.section || query.type
+      ? {
+          mediaType: {
+            ...(query.section ? { section: query.section } : {}),
+            ...(query.type ? { code: query.type } : {}),
+          },
+        }
+      : {}),
+    ...(query.q
+      ? {
+          OR: [
+            {
+              title: {
+                contains: query.q,
+                mode: 'insensitive',
+              },
+            },
+            {
+              normalizedTitle: {
+                contains: query.q.toLowerCase(),
+              },
+            },
+          ],
+        }
+      : {}),
     ...(query.genre
-      ? { mediaItem: { genres: { some: { genre: { slug: toSlug(query.genre) } } } } }
+      ? {
+          genres: {
+            some: {
+              genre: {
+                slug: toSlug(query.genre),
+              },
+            },
+          },
+        }
       : {}),
   };
+
+  const where: Prisma.LibraryEntryWhereInput = {
+    ...(query.status ? { status: query.status } : {}),
+    ...(Object.keys(mediaItemWhere).length > 0 ? { mediaItem: mediaItemWhere } : {}),
+  };
+
   const skip = (query.page - 1) * query.limit;
   const { items, totalItems } = await listLibraryEntries({
     userId,
