@@ -15,7 +15,7 @@ const PAGE_SIZE = 12;
 export function DiscoveryPage() {
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<'' | 'BOOK' | 'MANGA'>('');
+  const [selectedType, setSelectedType] = useState<'' | MediaTypeCode>('');
   const [libraryStatus, setLibraryStatus] = useState<LibraryStatus>('PLANNED');
 
   const [results, setResults] = useState<MediaCatalogueItem[]>([]);
@@ -35,7 +35,7 @@ export function DiscoveryPage() {
 
   const [searchVersion, setSearchVersion] = useState(0);
 
-  // Load all reading-library entries so existing titles can be identified.
+  // Load existing entries from both Reading and Watching.
   useEffect(() => {
     let cancelled = false;
 
@@ -45,7 +45,6 @@ export function DiscoveryPage() {
 
       try {
         const firstPage = await getLibrary({
-          section: 'READING',
           page: 1,
           limit: 100,
           sort: 'updatedAt:desc',
@@ -55,7 +54,6 @@ export function DiscoveryPage() {
 
         for (let currentPage = 2; currentPage <= firstPage.meta.totalPages; currentPage += 1) {
           const response = await getLibrary({
-            section: 'READING',
             page: currentPage,
             limit: 100,
             sort: 'updatedAt:desc',
@@ -87,7 +85,7 @@ export function DiscoveryPage() {
     };
   }, []);
 
-  // Search the existing media catalogue.
+  // Search the catalogue using the selected media type.
   useEffect(() => {
     if (!submittedQuery) {
       setResults([]);
@@ -108,7 +106,7 @@ export function DiscoveryPage() {
       try {
         const response = await searchMedia({
           q: submittedQuery,
-          ...(selectedType ? { type: selectedType as MediaTypeCode } : {}),
+          ...(selectedType ? { type: selectedType } : {}),
           page,
           limit: PAGE_SIZE,
           sort: 'title:asc',
@@ -161,7 +159,7 @@ export function DiscoveryPage() {
     setSearchVersion((version) => version + 1);
   }
 
-  // Add a title while handling titles already in the library.
+  // Add a title and prevent duplicate library entries.
   async function handleAdd(item: MediaCatalogueItem) {
     if (libraryMediaIds.has(item.id)) {
       setActionError('');
@@ -208,7 +206,7 @@ export function DiscoveryPage() {
     }
   }
 
-  function changeType(value: '' | 'BOOK' | 'MANGA') {
+  function changeType(value: '' | MediaTypeCode) {
     setSelectedType(value);
     setPage(1);
   }
@@ -216,8 +214,8 @@ export function DiscoveryPage() {
   return (
     <div className="page-stack">
       <PageHeader eyebrow="Find something new" title="Discovery and import">
-        Search the existing catalogue, inspect titles, and add books or manga to your personal
-        library.
+        Search the existing catalogue, inspect titles, and add movies, TV shows, anime, books, or
+        manga to your personal library.
       </PageHeader>
 
       <section className="surface">
@@ -229,7 +227,7 @@ export function DiscoveryPage() {
               id="discovery-query"
               type="search"
               maxLength={300}
-              placeholder="Enter a book or manga title"
+              placeholder="Enter a title"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -245,9 +243,12 @@ export function DiscoveryPage() {
               <select
                 aria-label="Filter by media type"
                 value={selectedType}
-                onChange={(event) => changeType(event.target.value as '' | 'BOOK' | 'MANGA')}
+                onChange={(event) => changeType(event.target.value as '' | MediaTypeCode)}
               >
-                <option value="">Books and Manga</option>
+                <option value="">All media types</option>
+                <option value="MOVIE">Movies</option>
+                <option value="TV">TV Shows</option>
+                <option value="ANIME">Anime</option>
                 <option value="BOOK">Books</option>
                 <option value="MANGA">Manga</option>
               </select>
@@ -427,7 +428,8 @@ export function DiscoveryPage() {
         </>
       ) : (
         <EmptyState title="Search the catalogue">
-          Enter a title above to find books and manga to add to your library.
+          Enter a title above to find movies, TV shows, anime, books, or manga to add to your
+          library.
         </EmptyState>
       )}
     </div>

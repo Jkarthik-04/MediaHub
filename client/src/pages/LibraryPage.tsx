@@ -177,7 +177,7 @@ export function LibraryPage({
       setRetryCount((count) => count + 1);
     } catch (caughtError) {
       setProgressError(
-        caughtError instanceof Error ? caughtError.message : 'Unable to save reading progress.',
+        caughtError instanceof Error ? caughtError.message : 'Unable to save progress.',
       );
     } finally {
       setSavingProgressId(null);
@@ -462,7 +462,7 @@ export function LibraryPage({
 
                       <p>Rating: {entry.rating ?? 'Not rated'}</p>
 
-                      {section === 'READING' && (
+                      {(section === 'READING' || section === 'WATCHING') && (
                         <div
                           style={{
                             display: 'flex',
