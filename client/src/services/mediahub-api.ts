@@ -174,6 +174,69 @@ export type MediaCatalogueQuery = {
   sort?: MediaCatalogueSort;
 };
 
+export type DiscoveryMedia = {
+  provider: 'jikan' | 'omdb' | 'open-library';
+  externalId: string;
+  mediaType: MediaTypeCode;
+  title: string;
+  alternateTitles: string[];
+  description?: string;
+  releaseDate?: string;
+  coverUrl?: string;
+  genres: string[];
+  totalUnits?: number;
+  sourceUrl: string;
+};
+
+export type DiscoverySearchResponse = ApiEnvelope<DiscoveryMedia[]> & {
+  meta: {
+    provider: DiscoveryMedia['provider'];
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+  };
+};
+
+export type ImportJob = {
+  id: string;
+  status: string;
+  candidates: Array<{
+    id: string;
+    proposedAction: 'CREATE' | 'REUSE' | 'REVIEW_MATCH';
+    match: { id: string; title: string } | null;
+  }>;
+};
+
+export async function searchDiscovery(query: {
+  q: string;
+  type: Extract<MediaTypeCode, 'BOOK' | 'MANGA'>;
+  page?: number;
+  limit?: number;
+}): Promise<DiscoverySearchResponse> {
+  const params = new URLSearchParams({ q: query.q, type: query.type });
+  if (query.page !== undefined) params.set('page', String(query.page));
+  if (query.limit !== undefined) params.set('limit', String(query.limit));
+  return apiClient<DiscoverySearchResponse>(`/discovery/search?${params.toString()}`);
+}
+
+export function previewImport(item: DiscoveryMedia, defaultLibraryStatus: LibraryStatus) {
+  return apiClient<ApiEnvelope<ImportJob>>('/imports/preview', {
+    method: 'POST',
+    body: { items: [item], defaultLibraryStatus },
+  });
+}
+
+export function confirmImport(
+  jobId: string,
+  decision: { candidateId: string; action: 'CREATE' | 'REUSE'; mediaItemId?: string },
+) {
+  return apiClient<ApiEnvelope<ImportJob>>(`/imports/${encodeURIComponent(jobId)}/confirm`, {
+    method: 'POST',
+    body: { decisions: [decision] },
+  });
+}
+
 export async function searchMedia(query: MediaCatalogueQuery): Promise<MediaCatalogueResponse> {
   const params = new URLSearchParams();
 
