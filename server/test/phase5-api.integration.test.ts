@@ -8,6 +8,7 @@ import {
   getSessionSecret,
   isAniListOAuthConfigured,
   isGoogleOAuthConfigured,
+  isTraktOAuthConfigured,
   sessionCookieName,
   sessionMaxAgeMilliseconds,
 } from '../src/config/security.js';
@@ -199,6 +200,22 @@ test('MediaHub API security and core workflow', async (t) => {
     } else {
       assert.equal(aniListConnect.status, 503);
       const connectionError = (await aniListConnect.json()) as { error: { code: string } };
+      assert.equal(connectionError.error.code, 'CONNECTION_NOT_CONFIGURED');
+    }
+
+    const traktConnect = await nativeFetch(`${baseUrl}/connections/trakt/connect`, {
+      headers: { Cookie: getSessionCookie(testSessionId) },
+      redirect: 'manual',
+    });
+    if (isTraktOAuthConfigured()) {
+      assert.equal(traktConnect.status, 302);
+      const location = new URL(traktConnect.headers.get('location') ?? '');
+      assert.equal(location.origin, 'https://trakt.tv');
+      assert.equal(location.searchParams.get('code_challenge_method'), 'S256');
+      assert.ok(location.searchParams.get('code_challenge'));
+    } else {
+      assert.equal(traktConnect.status, 503);
+      const connectionError = (await traktConnect.json()) as { error: { code: string } };
       assert.equal(connectionError.error.code, 'CONNECTION_NOT_CONFIGURED');
     }
 

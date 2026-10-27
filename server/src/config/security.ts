@@ -35,3 +35,10 @@ export const isAniListOAuthConfigured = () =>
       process.env.ANILIST_CLIENT_SECRET &&
       process.env.CONNECTION_TOKEN_ENCRYPTION_KEY,
   );
+
+export const isTraktOAuthConfigured = () =>
+  Boolean(
+    process.env.TRAKT_CLIENT_ID &&
+      process.env.TRAKT_CLIENT_SECRET &&
+      process.env.CONNECTION_TOKEN_ENCRYPTION_KEY,
+  );

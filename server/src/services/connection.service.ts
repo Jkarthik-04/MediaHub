@@ -1,4 +1,4 @@
-import { isAniListOAuthConfigured } from '../config/security.js';
+import { isAniListOAuthConfigured, isTraktOAuthConfigured } from '../config/security.js';
 import { AppError } from '../errors/app-error.js';
 import {
   deleteUserConnection,
@@ -23,8 +23,8 @@ const providers = [
     media: ['MOVIE', 'TV'],
     description: 'Import movie and show watchlists, history, ratings, and episode progress.',
     mode: 'OAUTH',
-    configurationReady: () => Boolean(process.env.TRAKT_CLIENT_ID),
-    connectorImplemented: false,
+    configurationReady: isTraktOAuthConfigured,
+    connectorImplemented: true,
   },
   {
     key: 'google-books',
@@ -168,6 +168,102 @@ export const connectAniListAccount = async (userId: string, code: string) => {
   });
   if (!saved) {
     throw new AppError(500, 'CONNECTION_SOURCE_MISSING', 'The AniList source has not been seeded.');
+  }
+};
+
+type TraktTokenResponse = {
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  scope?: string;
+};
+
+type TraktSettingsResponse = {
+  user?: {
+    username?: string;
+    ids?: { slug?: string; uuid?: string };
+  };
+};
+
+const traktCallbackUrl = () =>
+  process.env.TRAKT_CALLBACK_URL ?? 'http://localhost:3000/api/v1/connections/trakt/callback';
+
+export const createTraktAuthorizationUrl = (state: string, codeChallenge: string) => {
+  if (!isTraktOAuthConfigured()) {
+    throw new AppError(
+      503,
+      'CONNECTION_NOT_CONFIGURED',
+      'Trakt OAuth has not been configured for this environment.',
+    );
+  }
+
+  const url = new URL('https://trakt.tv/oauth/authorize');
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('client_id', process.env.TRAKT_CLIENT_ID!);
+  url.searchParams.set('redirect_uri', traktCallbackUrl());
+  url.searchParams.set('state', state);
+  url.searchParams.set('code_challenge', codeChallenge);
+  url.searchParams.set('code_challenge_method', 'S256');
+  return url.toString();
+};
+
+export const connectTraktAccount = async (userId: string, code: string, codeVerifier: string) => {
+  if (!isTraktOAuthConfigured()) {
+    throw new AppError(
+      503,
+      'CONNECTION_NOT_CONFIGURED',
+      'Trakt OAuth has not been configured for this environment.',
+    );
+  }
+
+  const tokenResponse = await fetch('https://api.trakt.tv/oauth/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({
+      code,
+      client_id: process.env.TRAKT_CLIENT_ID,
+      client_secret: process.env.TRAKT_CLIENT_SECRET,
+      redirect_uri: traktCallbackUrl(),
+      grant_type: 'authorization_code',
+      code_verifier: codeVerifier,
+    }),
+  });
+  const token = (await tokenResponse.json()) as TraktTokenResponse;
+  if (!tokenResponse.ok || !token.access_token) {
+    throw new AppError(
+      502,
+      'TRAKT_TOKEN_EXCHANGE_FAILED',
+      'Trakt did not accept the connection request.',
+    );
+  }
+
+  const settingsResponse = await fetch('https://api.trakt.tv/users/settings', {
+    headers: {
+      authorization: `Bearer ${token.access_token}`,
+      'content-type': 'application/json',
+      'trakt-api-key': process.env.TRAKT_CLIENT_ID!,
+      'trakt-api-version': '2',
+    },
+  });
+  const settings = (await settingsResponse.json()) as TraktSettingsResponse;
+  const traktUser = settings.user;
+  const externalUserId = traktUser?.ids?.uuid ?? traktUser?.ids?.slug ?? traktUser?.username;
+  if (!settingsResponse.ok || !traktUser || !externalUserId) {
+    throw new AppError(502, 'TRAKT_PROFILE_FAILED', 'MediaHub could not read the Trakt profile.');
+  }
+
+  const saved = await saveUserConnection({
+    userId,
+    sourceKey: 'trakt',
+    externalUserId,
+    externalUsername: traktUser.username ?? null,
+    accessTokenEncrypted: encryptConnectionToken(token.access_token),
+    refreshTokenEncrypted: token.refresh_token ? encryptConnectionToken(token.refresh_token) : null,
+    tokenExpiresAt: token.expires_in ? new Date(Date.now() + token.expires_in * 1_000) : null,
+    scopes: token.scope ? token.scope.split(' ').filter(Boolean) : [],
+  });
+  if (!saved) {
+    throw new AppError(500, 'CONNECTION_SOURCE_MISSING', 'The Trakt source has not been seeded.');
   }
 };
 

@@ -1,3 +1,5 @@
+import './config/environment.js';
+
 import { createApp } from './app.js';
 import { disconnectSessionStore } from './config/session.js';
 import { prisma } from './utils/prisma.js';

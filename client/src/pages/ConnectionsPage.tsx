@@ -33,6 +33,9 @@ export function ConnectionsPage() {
     if (result === 'anilist-success') {
       setMessage('AniList was connected successfully.');
       window.history.replaceState({}, '', window.location.pathname);
+    } else if (result === 'trakt-success') {
+      setMessage('Trakt was connected successfully.');
+      window.history.replaceState({}, '', window.location.pathname);
     }
     void loadProviders();
   }, []);

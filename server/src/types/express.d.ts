@@ -13,9 +13,10 @@ declare global {
 declare module 'express-session' {
   interface SessionData {
     connectionOAuth?: {
-      provider: 'anilist';
+      provider: 'anilist' | 'trakt';
       state: string;
       createdAt: number;
+      codeVerifier?: string;
     };
   }
 }
