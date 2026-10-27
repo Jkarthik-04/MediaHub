@@ -177,6 +177,17 @@ test('MediaHub API security and core workflow', async (t) => {
     assert.equal(profileData.id, testUserId);
     assert.equal(profileData.role, 'USER');
 
+    const connections = await api('/connections');
+    assert.equal(connections.response.status, 200);
+    const connectionProviders = connections.body.data as Array<{ key: string }>;
+    assert.deepEqual(
+      connectionProviders.map(({ key }) => key),
+      ['anilist', 'trakt', 'google-books', 'mangadex'],
+    );
+    const serializedConnections = JSON.stringify(connections.body);
+    assert.equal(serializedConnections.includes('accessTokenEncrypted'), false);
+    assert.equal(serializedConnections.includes('refreshTokenEncrypted'), false);
+
     const expired = await apiForSession(expiredSessionId, '/auth/me');
     assert.equal(expired.response.status, 401);
 

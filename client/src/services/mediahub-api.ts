@@ -337,3 +337,30 @@ export function addLibraryEntry(mediaItemId: string, status: LibraryStatus = 'PL
     },
   });
 }
+
+export type ConnectionProvider = {
+  key: 'anilist' | 'trakt' | 'google-books' | 'mangadex';
+  name: string;
+  media: MediaTypeCode[];
+  description: string;
+  mode: 'OAUTH';
+  configured: boolean;
+  connectAvailable: boolean;
+  connection: null | {
+    id: string;
+    externalUserId: string;
+    externalUsername: string | null;
+    status: 'CONNECTED' | 'EXPIRED' | 'REVOKED' | 'ERROR';
+    tokenExpiresAt: string | null;
+    lastSyncedAt: string | null;
+    lastError: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+};
+
+export const getConnectionProviders = () =>
+  apiClient<ApiEnvelope<ConnectionProvider[]>>('/connections');
+
+export const disconnectProvider = (sourceKey: ConnectionProvider['key']) =>
+  apiClient<void>(`/connections/${encodeURIComponent(sourceKey)}`, { method: 'DELETE' });

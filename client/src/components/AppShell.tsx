@@ -9,6 +9,7 @@ const navigation = [
   { to: '/reading', label: 'Reading' },
   { to: '/watching', label: 'Watching' },
   { to: '/recommendations', label: 'Recommendations' },
+  { to: '/connections', label: 'Connections' },
 ];
 
 export function AppShell() {

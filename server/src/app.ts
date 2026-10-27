@@ -13,6 +13,7 @@ import { dashboardRouter } from './routes/dashboard.routes.js';
 import { authRouter } from './routes/auth.routes.js';
 import { adminRouter } from './routes/admin.routes.js';
 import { discoveryRouter } from './routes/discovery.routes.js';
+import { connectionRouter } from './routes/connection.routes.js';
 import { importRouter } from './routes/import.routes.js';
 import { libraryRouter } from './routes/library.routes.js';
 import { mediaRouter } from './routes/media.routes.js';
@@ -79,6 +80,7 @@ export const createApp = () => {
   app.use('/api/v1/library', libraryRouter);
   app.use('/api/v1/dashboard', dashboardRouter);
   app.use('/api/v1/discovery', discoveryRouter);
+  app.use('/api/v1/connections', connectionRouter);
   app.use('/api/v1/imports', importRouter);
 
   app.use((_request, _response, next) => {
