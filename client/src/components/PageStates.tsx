@@ -18,6 +18,21 @@ export function LoadingState({ label = 'Loading content…' }: { label?: string 
     </section>
   );
 }
+export function SkeletonLoader({ label = 'Loading content' }: { label?: string }) {
+  return (
+    <section aria-label={label} aria-busy="true" className="skeleton-list">
+      {[0, 1, 2].map((row) => (
+        <div className="skeleton-row" key={row}>
+          <span className="skeleton-block skeleton-cover" />
+          <span className="skeleton-copy">
+            <i className="skeleton-block" />
+            <i className="skeleton-block short" />
+          </span>
+        </div>
+      ))}
+    </section>
+  );
+}
 export function ErrorState(props: Props) {
   return <StatePanel {...props} />;
 }

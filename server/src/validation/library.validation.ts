@@ -12,7 +12,10 @@ export const libraryListQuerySchema = z.object({
   q: z.string().trim().min(1).max(300).optional(),
   status: libraryStatusSchema.optional(),
   genre: z.string().trim().min(1).max(100).optional(),
-  sort: z.enum(['updatedAt:desc', 'title:asc', 'rating:desc']).default('updatedAt:desc'),
+  minRating: z.coerce.number().min(0).max(10).multipleOf(0.5).optional(),
+  sort: z
+    .enum(['updatedAt:desc', 'title:asc', 'rating:desc', 'progress:desc'])
+    .default('updatedAt:desc'),
 });
 
 export const libraryEntryParamsSchema = z.object({

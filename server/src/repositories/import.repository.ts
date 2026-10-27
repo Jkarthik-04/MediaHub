@@ -38,7 +38,7 @@ export const findExternalMatch = (sourceId: number, externalId: string) =>
 
 export const findTitleMatch = (mediaTypeId: number, normalizedTitle: string) =>
   prisma.mediaItem.findFirst({
-    where: { mediaTypeId, normalizedTitle, isActive: true },
+    where: { mediaTypeId, normalizedTitle, isActive: true, reviewStatus: 'APPROVED' },
     select: { id: true },
   });
 
@@ -151,7 +151,12 @@ export const confirmImport = (userId: string, jobId: string, decisions: Prepared
       if (decision.action === 'REUSE') {
         const target = mediaItemId
           ? await transaction.mediaItem.findFirst({
-              where: { id: mediaItemId, mediaTypeId: candidate.mediaTypeId, isActive: true },
+              where: {
+                id: mediaItemId,
+                mediaTypeId: candidate.mediaTypeId,
+                isActive: true,
+                reviewStatus: 'APPROVED',
+              },
               select: { id: true },
             })
           : null;

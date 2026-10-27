@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ConfirmationDialog } from '../components/ConfirmationDialog';
+import { FilterBar } from '../components/FilterBar';
 import { PageHeader } from '../components/PageHeader';
 import { EmptyState } from '../components/PageStates';
+import { Pagination } from '../components/Pagination';
+import { ProgressControl } from '../components/ProgressControl';
+import { StatusBadge } from '../components/StatusBadge';
 import {
   deleteLibraryEntry,
   getLibrary,
@@ -71,18 +77,21 @@ export function LibraryPage({
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<LibraryStatus | ''>('');
   const [genre, setGenre] = useState('');
+  const [minRating, setMinRating] = useState<number | undefined>();
   const [sort, setSort] = useState<LibrarySort>('updatedAt:desc');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
 
   // Reading progress state
   const [progressDrafts, setProgressDrafts] = useState<Record<string, string>>({});
   const [savingProgressId, setSavingProgressId] = useState<string | null>(null);
   const [progressError, setProgressError] = useState('');
   const [progressMessage, setProgressMessage] = useState('');
+  const [currentUnitDrafts, setCurrentUnitDrafts] = useState<Record<string, string>>({});
 
   // Edit and remove state
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -92,6 +101,7 @@ export function LibraryPage({
   const [savingEntryId, setSavingEntryId] = useState<string | null>(null);
   const [entryActionError, setEntryActionError] = useState('');
   const [entryActionMessage, setEntryActionMessage] = useState('');
+  const [entryToRemove, setEntryToRemove] = useState<LibraryEntry | null>(null);
 
   // Fetch results from the backend with search, media type and filters.
   useEffect(() => {
@@ -108,6 +118,7 @@ export function LibraryPage({
           q: search.trim() || undefined,
           status: status || undefined,
           genre: genre.trim() || undefined,
+          minRating,
           sort,
           page,
           limit: PAGE_SIZE,
@@ -120,6 +131,13 @@ export function LibraryPage({
             ...current,
             ...Object.fromEntries(
               response.data.map((entry) => [entry.id, String(entry.progressValue ?? 0)]),
+            ),
+          }));
+
+          setCurrentUnitDrafts((current) => ({
+            ...current,
+            ...Object.fromEntries(
+              response.data.map((entry) => [entry.id, entry.currentUnit?.id ?? '']),
             ),
           }));
 
@@ -143,7 +161,7 @@ export function LibraryPage({
     return () => {
       cancelled = true;
     };
-  }, [section, activeTab, search, status, genre, sort, page, retryCount]);
+  }, [section, activeTab, search, status, genre, minRating, sort, page, retryCount]);
 
   // Save reading progress.
   async function saveProgress(entry: LibraryEntry) {
@@ -171,13 +189,18 @@ export function LibraryPage({
     setEntryActionError('');
 
     try {
-      await updateLibraryProgress(entry.id, { progressValue: value });
+      await updateLibraryProgress(entry.id, {
+        progressValue: value,
+        ...(currentUnitDrafts[entry.id]
+          ? { currentUnitId: currentUnitDrafts[entry.id] }
+          : { currentUnitId: null }),
+      });
 
       setProgressMessage(`Progress saved for ${entry.mediaItem.title}.`);
       setRetryCount((count) => count + 1);
     } catch (caughtError) {
       setProgressError(
-        caughtError instanceof Error ? caughtError.message : 'Unable to save reading progress.',
+        caughtError instanceof Error ? caughtError.message : 'Unable to save progress.',
       );
     } finally {
       setSavingProgressId(null);
@@ -238,10 +261,12 @@ export function LibraryPage({
 
   // Remove an entry after confirmation.
   async function removeEntry(entry: LibraryEntry) {
-    const confirmed = window.confirm(`Remove "${entry.mediaItem.title}" from your library?`);
+    setEntryToRemove(entry);
+  }
 
-    if (!confirmed) return;
-
+  async function confirmRemoveEntry() {
+    const entry = entryToRemove;
+    if (!entry) return;
     setSavingEntryId(entry.id);
     setEntryActionError('');
     setEntryActionMessage('');
@@ -250,6 +275,7 @@ export function LibraryPage({
       await deleteLibraryEntry(entry.id);
 
       setEditingEntryId(null);
+      setEntryToRemove(null);
       setPage(1);
       setEntryActionMessage(`${entry.mediaItem.title} was removed.`);
       setRetryCount((count) => count + 1);
@@ -278,7 +304,8 @@ export function LibraryPage({
     setSearch('');
   }
 
-  const hasActiveFilters = search.trim() !== '' || status !== '' || genre.trim() !== '';
+  const hasActiveFilters =
+    search.trim() !== '' || status !== '' || genre.trim() !== '' || minRating !== undefined;
 
   return (
     <div className="page-stack">
@@ -302,7 +329,7 @@ export function LibraryPage({
           ))}
         </div>
 
-        <div className="filter-grid">
+        <FilterBar label={`${title} search and filters`}>
           <input
             aria-label="Search library"
             onChange={(event) => {
@@ -313,6 +340,21 @@ export function LibraryPage({
             type="search"
             value={search}
           />
+
+          <select
+            aria-label="Filter by minimum rating"
+            onChange={(event) => {
+              setMinRating(event.target.value ? Number(event.target.value) : undefined);
+              setPage(1);
+            }}
+            value={minRating ?? ''}
+          >
+            <option value="">Any rating</option>
+            <option value="5">5 or higher</option>
+            <option value="7">7 or higher</option>
+            <option value="8">8 or higher</option>
+            <option value="9">9 or higher</option>
+          </select>
 
           <select
             aria-label="Filter by status"
@@ -345,8 +387,27 @@ export function LibraryPage({
             <option value="updatedAt:desc">Recently updated</option>
             <option value="title:asc">Title A–Z</option>
             <option value="rating:desc">Highest rating</option>
+            <option value="progress:desc">Most progress</option>
           </select>
-        </div>
+          <div className="view-toggle" aria-label="Library layout">
+            <button
+              className="tab"
+              aria-pressed={viewMode === 'list'}
+              onClick={() => setViewMode('list')}
+              type="button"
+            >
+              List
+            </button>
+            <button
+              className="tab"
+              aria-pressed={viewMode === 'grid'}
+              onClick={() => setViewMode('grid')}
+              type="button"
+            >
+              Grid
+            </button>
+          </div>
+        </FilterBar>
       </section>
 
       {progressError && (
@@ -399,16 +460,12 @@ export function LibraryPage({
         </EmptyState>
       ) : (
         <>
-          <div className="page-stack">
+          <div className={viewMode === 'grid' ? 'library-card-grid' : 'page-stack'}>
             {entries.map((entry) => {
               const unit = getProgressUnit(entry);
-              const maximum =
-                entry.mediaItem.mediaType.progressMode === 'PERCENTAGE'
-                  ? 100
-                  : (entry.mediaItem.totalUnits ?? undefined);
 
               return (
-                <article className="surface" key={entry.id}>
+                <article className={`surface library-entry ${viewMode}`} key={entry.id}>
                   <div
                     style={{
                       display: 'flex',
@@ -432,10 +489,12 @@ export function LibraryPage({
                     )}
 
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <h2>{entry.mediaItem.title}</h2>
+                      <h2>
+                        <Link to={`/media/${entry.mediaItem.id}`}>{entry.mediaItem.title}</Link>
+                      </h2>
 
                       <p>
-                        {entry.mediaItem.mediaType.name} · {entry.status.replaceAll('_', ' ')}
+                        {entry.mediaItem.mediaType.name} · <StatusBadge status={entry.status} />
                       </p>
 
                       <p>
@@ -462,44 +521,32 @@ export function LibraryPage({
 
                       <p>Rating: {entry.rating ?? 'Not rated'}</p>
 
-                      {section === 'READING' && (
-                        <div
-                          style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '8px',
-                            alignItems: 'center',
-                            marginTop: '16px',
-                          }}
-                        >
-                          <label htmlFor={`progress-${entry.id}`}>Update progress ({unit})</label>
-
-                          <input
-                            id={`progress-${entry.id}`}
-                            aria-label={`New progress for ${entry.mediaItem.title}`}
-                            type="number"
-                            min={0}
-                            max={maximum}
-                            step="any"
-                            value={progressDrafts[entry.id] ?? String(entry.progressValue ?? 0)}
-                            onChange={(event) =>
-                              setProgressDrafts((current) => ({
-                                ...current,
-                                [entry.id]: event.target.value,
-                              }))
-                            }
-                          />
-
-                          <button
-                            className="tab"
-                            disabled={savingProgressId === entry.id || savingEntryId === entry.id}
-                            onClick={() => void saveProgress(entry)}
-                            type="button"
-                          >
-                            {savingProgressId === entry.id ? 'Saving…' : 'Save Progress'}
-                          </button>
-                        </div>
-                      )}
+                      <ProgressControl
+                        entry={entry}
+                        value={progressDrafts[entry.id] ?? String(entry.progressValue ?? 0)}
+                        currentUnitId={currentUnitDrafts[entry.id] ?? ''}
+                        saving={savingProgressId === entry.id || savingEntryId === entry.id}
+                        onValueChange={(value) =>
+                          setProgressDrafts((current) => ({ ...current, [entry.id]: value }))
+                        }
+                        onUnitChange={(value) => {
+                          setCurrentUnitDrafts((current) => ({ ...current, [entry.id]: value }));
+                          const selectedUnit = entry.mediaItem.units.find(
+                            (unit) => unit.id === value,
+                          );
+                          if (
+                            selectedUnit?.sequenceNumber !== null &&
+                            selectedUnit?.sequenceNumber !== undefined &&
+                            ['EPISODE', 'CHAPTER', 'VOLUME'].includes(selectedUnit.unitKind)
+                          ) {
+                            setProgressDrafts((current) => ({
+                              ...current,
+                              [entry.id]: String(selectedUnit.sequenceNumber),
+                            }));
+                          }
+                        }}
+                        onSave={() => void saveProgress(entry)}
+                      />
 
                       <div
                         style={{
@@ -613,32 +660,18 @@ export function LibraryPage({
             })}
           </div>
 
-          <div className="surface">
-            <p>
-              Page {page} of {totalPages}
-            </p>
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                className="tab"
-                disabled={page <= 1 || loading}
-                onClick={() => setPage((current) => current - 1)}
-                type="button"
-              >
-                Previous
-              </button>
-
-              <button
-                className="tab"
-                disabled={page >= totalPages || loading}
-                onClick={() => setPage((current) => current + 1)}
-                type="button"
-              >
-                Next
-              </button>
-            </div>
-          </div>
+          <Pagination page={page} totalPages={totalPages} disabled={loading} onChange={setPage} />
         </>
+      )}
+      {entryToRemove && (
+        <ConfirmationDialog
+          title="Remove this title?"
+          description={`Remove “${entryToRemove.mediaItem.title}” from your library? Its catalogue record will remain.`}
+          confirmLabel="Remove title"
+          busy={savingEntryId === entryToRemove.id}
+          onCancel={() => setEntryToRemove(null)}
+          onConfirm={() => void confirmRemoveEntry()}
+        />
       )}
     </div>
   );

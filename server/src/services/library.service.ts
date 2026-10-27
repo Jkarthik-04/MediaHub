@@ -61,6 +61,7 @@ export const getUserLibrary = async (userId: string, query: LibraryListQuery) =>
 
   const where: Prisma.LibraryEntryWhereInput = {
     ...(query.status ? { status: query.status } : {}),
+    ...(query.minRating !== undefined ? { rating: { gte: query.minRating } } : {}),
     ...(Object.keys(mediaItemWhere).length > 0 ? { mediaItem: mediaItemWhere } : {}),
   };
 
@@ -175,6 +176,8 @@ const getOrderBy = (
       return [{ mediaItem: { title: 'asc' } }, { id: 'asc' }];
     case 'rating:desc':
       return [{ rating: { sort: 'desc', nulls: 'last' } }, { id: 'asc' }];
+    case 'progress:desc':
+      return [{ progressValue: 'desc' }, { id: 'asc' }];
     default:
       return [{ updatedAt: 'desc' }, { id: 'asc' }];
   }
@@ -205,6 +208,10 @@ const toLibraryResponse = (entry: LibraryEntryRecord) => ({
   mediaItem: {
     ...entry.mediaItem,
     genres: entry.mediaItem.genres.map(({ genre }) => genre),
+    units: entry.mediaItem.units.map((unit) => ({
+      ...unit,
+      sequenceNumber: toNumber(unit.sequenceNumber),
+    })),
   },
   currentUnit: entry.currentUnit
     ? { ...entry.currentUnit, sequenceNumber: toNumber(entry.currentUnit.sequenceNumber) }

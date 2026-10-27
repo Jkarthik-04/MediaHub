@@ -31,6 +31,17 @@ const libraryEntrySelect = {
           genre: { select: { name: true, slug: true } },
         },
       },
+      units: {
+        orderBy: [{ sequenceNumber: 'asc' }, { id: 'asc' }],
+        take: 250,
+        select: {
+          id: true,
+          unitKind: true,
+          sequenceNumber: true,
+          seasonNumber: true,
+          title: true,
+        },
+      },
     },
   },
   currentUnit: {
@@ -94,7 +105,7 @@ export const findOwnedLibraryEntryByMedia = (userId: string, mediaItemId: string
 
 export const findActiveMediaForLibrary = (mediaItemId: string) => {
   return prisma.mediaItem.findFirst({
-    where: { id: mediaItemId, isActive: true },
+    where: { id: mediaItemId, isActive: true, reviewStatus: 'APPROVED' },
     select: { id: true },
   });
 };

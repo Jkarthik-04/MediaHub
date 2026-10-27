@@ -102,7 +102,7 @@ export const listMedia = async ({ where, orderBy, skip, take }: ListMediaInput) 
 
 export const findMediaById = (id: string) => {
   return prisma.mediaItem.findFirst({
-    where: { id, isActive: true },
+    where: { id, isActive: true, reviewStatus: 'APPROVED' },
     select: mediaDetailSelect,
   });
 };
@@ -123,6 +123,7 @@ export const findMediaByNormalizedTitle = (mediaTypeId: number, normalizedTitle:
 
 type CreateManualMediaInput = {
   mediaTypeId: number;
+  createdByUserId: string;
   title: string;
   normalizedTitle: string;
   description?: string;
@@ -149,6 +150,7 @@ export const createManualMedia = (input: CreateManualMediaInput) => {
     return transaction.mediaItem.create({
       data: {
         mediaTypeId: input.mediaTypeId,
+        createdByUserId: input.createdByUserId,
         title: input.title,
         normalizedTitle: input.normalizedTitle,
         description: input.description,

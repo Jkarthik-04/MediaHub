@@ -15,6 +15,7 @@ import type { ManualMediaBody, MediaListQuery } from '../validation/media.valida
 export const getMediaCatalogue = async (query: MediaListQuery) => {
   const where: Prisma.MediaItemWhereInput = {
     isActive: true,
+    reviewStatus: 'APPROVED',
     ...(query.q
       ? {
           OR: [
@@ -58,7 +59,7 @@ export const getMediaDetails = async (mediaId: string) => {
   return { data: toMediaDetailResponse(mediaItem) };
 };
 
-export const submitManualMedia = async (body: ManualMediaBody) => {
+export const submitManualMedia = async (body: ManualMediaBody, createdByUserId: string) => {
   const normalizedTitle = normalizeTitle(body.title);
   const mediaType = await findMediaTypeByCode(body.mediaType);
 
@@ -84,6 +85,7 @@ export const submitManualMedia = async (body: ManualMediaBody) => {
 
   const mediaItem = await createManualMedia({
     mediaTypeId: mediaType.id,
+    createdByUserId,
     title: body.title,
     normalizedTitle,
     ...(body.description ? { description: body.description } : {}),
