@@ -4,6 +4,7 @@ import { PageHeader } from '../components/PageHeader';
 import {
   disconnectProvider,
   getConnectionProviders,
+  getProviderConnectUrl,
   type ConnectionProvider,
 } from '../services/mediahub-api';
 
@@ -28,6 +29,11 @@ export function ConnectionsPage() {
   };
 
   useEffect(() => {
+    const result = new URLSearchParams(window.location.search).get('connection');
+    if (result === 'anilist-success') {
+      setMessage('AniList was connected successfully.');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
     void loadProviders();
   }, []);
 
@@ -115,7 +121,14 @@ export function ConnectionsPage() {
                         ? 'OAuth connector implementation is the next checkpoint.'
                         : 'Provider credentials have not been configured.'}
                     </p>
-                    <button className="button button-primary" type="button" disabled>
+                    <button
+                      className="button button-primary"
+                      type="button"
+                      disabled={!provider.connectAvailable}
+                      onClick={() => {
+                        window.location.assign(getProviderConnectUrl(provider.key));
+                      }}
+                    >
                       {provider.connectAvailable ? 'Connect' : 'Coming next'}
                     </button>
                   </>

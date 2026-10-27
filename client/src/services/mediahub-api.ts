@@ -364,3 +364,6 @@ export const getConnectionProviders = () =>
 
 export const disconnectProvider = (sourceKey: ConnectionProvider['key']) =>
   apiClient<void>(`/connections/${encodeURIComponent(sourceKey)}`, { method: 'DELETE' });
+
+export const getProviderConnectUrl = (sourceKey: ConnectionProvider['key']) =>
+  `/api/v1/connections/${encodeURIComponent(sourceKey)}/connect`;

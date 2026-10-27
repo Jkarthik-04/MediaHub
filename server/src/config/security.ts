@@ -28,3 +28,10 @@ export const getSessionDatabaseUrl = () => {
 
 export const isGoogleOAuthConfigured = () =>
   Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+
+export const isAniListOAuthConfigured = () =>
+  Boolean(
+    process.env.ANILIST_CLIENT_ID &&
+      process.env.ANILIST_CLIENT_SECRET &&
+      process.env.CONNECTION_TOKEN_ENCRYPTION_KEY,
+  );
