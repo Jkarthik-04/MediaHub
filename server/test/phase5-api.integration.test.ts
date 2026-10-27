@@ -7,6 +7,7 @@ import { createApp } from '../src/app.js';
 import {
   getSessionSecret,
   isAniListOAuthConfigured,
+  isGoogleBooksOAuthConfigured,
   isGoogleOAuthConfigured,
   isTraktOAuthConfigured,
   sessionCookieName,
@@ -216,6 +217,22 @@ test('MediaHub API security and core workflow', async (t) => {
     } else {
       assert.equal(traktConnect.status, 503);
       const connectionError = (await traktConnect.json()) as { error: { code: string } };
+      assert.equal(connectionError.error.code, 'CONNECTION_NOT_CONFIGURED');
+    }
+
+    const googleBooksConnect = await nativeFetch(`${baseUrl}/connections/google-books/connect`, {
+      headers: { Cookie: getSessionCookie(testSessionId) },
+      redirect: 'manual',
+    });
+    if (isGoogleBooksOAuthConfigured()) {
+      assert.equal(googleBooksConnect.status, 302);
+      const location = new URL(googleBooksConnect.headers.get('location') ?? '');
+      assert.equal(location.origin, 'https://accounts.google.com');
+      assert.equal(location.searchParams.get('code_challenge_method'), 'S256');
+      assert.match(location.searchParams.get('scope') ?? '', /googleapis\.com\/auth\/books/);
+    } else {
+      assert.equal(googleBooksConnect.status, 503);
+      const connectionError = (await googleBooksConnect.json()) as { error: { code: string } };
       assert.equal(connectionError.error.code, 'CONNECTION_NOT_CONFIGURED');
     }
 

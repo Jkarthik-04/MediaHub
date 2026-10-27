@@ -42,3 +42,10 @@ export const isTraktOAuthConfigured = () =>
       process.env.TRAKT_CLIENT_SECRET &&
       process.env.CONNECTION_TOKEN_ENCRYPTION_KEY,
   );
+
+export const isGoogleBooksOAuthConfigured = () =>
+  Boolean(
+    process.env.GOOGLE_BOOKS_CLIENT_ID &&
+      process.env.GOOGLE_BOOKS_CLIENT_SECRET &&
+      process.env.CONNECTION_TOKEN_ENCRYPTION_KEY,
+  );

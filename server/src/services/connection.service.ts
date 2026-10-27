@@ -1,4 +1,8 @@
-import { isAniListOAuthConfigured, isTraktOAuthConfigured } from '../config/security.js';
+import {
+  isAniListOAuthConfigured,
+  isGoogleBooksOAuthConfigured,
+  isTraktOAuthConfigured,
+} from '../config/security.js';
 import { AppError } from '../errors/app-error.js';
 import {
   deleteUserConnection,
@@ -32,9 +36,8 @@ const providers = [
     media: ['BOOK'],
     description: 'Import saved volumes from your Google Books My Library shelves.',
     mode: 'OAUTH',
-    configurationReady: () =>
-      Boolean(process.env.GOOGLE_BOOKS_CLIENT_ID && process.env.GOOGLE_BOOKS_CLIENT_SECRET),
-    connectorImplemented: false,
+    configurationReady: isGoogleBooksOAuthConfigured,
+    connectorImplemented: true,
   },
   {
     key: 'mangadex',
@@ -264,6 +267,112 @@ export const connectTraktAccount = async (userId: string, code: string, codeVeri
   });
   if (!saved) {
     throw new AppError(500, 'CONNECTION_SOURCE_MISSING', 'The Trakt source has not been seeded.');
+  }
+};
+
+type GoogleBooksTokenResponse = {
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  scope?: string;
+};
+
+type GoogleUserInfoResponse = {
+  sub?: string;
+  name?: string;
+  email?: string;
+};
+
+const googleBooksCallbackUrl = () =>
+  process.env.GOOGLE_BOOKS_CALLBACK_URL ??
+  'http://localhost:3000/api/v1/connections/google-books/callback';
+
+export const createGoogleBooksAuthorizationUrl = (state: string, codeChallenge: string) => {
+  if (!isGoogleBooksOAuthConfigured()) {
+    throw new AppError(
+      503,
+      'CONNECTION_NOT_CONFIGURED',
+      'Google Books OAuth has not been configured for this environment.',
+    );
+  }
+
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  url.searchParams.set('client_id', process.env.GOOGLE_BOOKS_CLIENT_ID!);
+  url.searchParams.set('redirect_uri', googleBooksCallbackUrl());
+  url.searchParams.set('response_type', 'code');
+  url.searchParams.set('scope', 'openid profile https://www.googleapis.com/auth/books');
+  url.searchParams.set('access_type', 'offline');
+  url.searchParams.set('prompt', 'consent');
+  url.searchParams.set('include_granted_scopes', 'true');
+  url.searchParams.set('state', state);
+  url.searchParams.set('code_challenge', codeChallenge);
+  url.searchParams.set('code_challenge_method', 'S256');
+  return url.toString();
+};
+
+export const connectGoogleBooksAccount = async (
+  userId: string,
+  code: string,
+  codeVerifier: string,
+) => {
+  if (!isGoogleBooksOAuthConfigured()) {
+    throw new AppError(
+      503,
+      'CONNECTION_NOT_CONFIGURED',
+      'Google Books OAuth has not been configured for this environment.',
+    );
+  }
+
+  const tokenBody = new URLSearchParams({
+    code,
+    client_id: process.env.GOOGLE_BOOKS_CLIENT_ID!,
+    client_secret: process.env.GOOGLE_BOOKS_CLIENT_SECRET!,
+    redirect_uri: googleBooksCallbackUrl(),
+    grant_type: 'authorization_code',
+    code_verifier: codeVerifier,
+  });
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded', accept: 'application/json' },
+    body: tokenBody,
+  });
+  const token = (await tokenResponse.json()) as GoogleBooksTokenResponse;
+  if (!tokenResponse.ok || !token.access_token) {
+    throw new AppError(
+      502,
+      'GOOGLE_BOOKS_TOKEN_EXCHANGE_FAILED',
+      'Google did not accept the Books connection request.',
+    );
+  }
+
+  const profileResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+    headers: { authorization: `Bearer ${token.access_token}`, accept: 'application/json' },
+  });
+  const profile = (await profileResponse.json()) as GoogleUserInfoResponse;
+  if (!profileResponse.ok || !profile.sub) {
+    throw new AppError(
+      502,
+      'GOOGLE_BOOKS_PROFILE_FAILED',
+      'MediaHub could not read the connected Google Books profile.',
+    );
+  }
+
+  const saved = await saveUserConnection({
+    userId,
+    sourceKey: 'google-books',
+    externalUserId: profile.sub,
+    externalUsername: profile.name ?? profile.email ?? null,
+    accessTokenEncrypted: encryptConnectionToken(token.access_token),
+    refreshTokenEncrypted: token.refresh_token ? encryptConnectionToken(token.refresh_token) : null,
+    tokenExpiresAt: token.expires_in ? new Date(Date.now() + token.expires_in * 1_000) : null,
+    scopes: token.scope ? token.scope.split(' ').filter(Boolean) : [],
+  });
+  if (!saved) {
+    throw new AppError(
+      500,
+      'CONNECTION_SOURCE_MISSING',
+      'The Google Books source has not been seeded.',
+    );
   }
 };
 

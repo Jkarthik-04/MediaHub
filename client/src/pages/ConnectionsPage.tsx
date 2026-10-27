@@ -36,8 +36,15 @@ export function ConnectionsPage() {
     } else if (result === 'trakt-success') {
       setMessage('Trakt was connected successfully.');
       window.history.replaceState({}, '', window.location.pathname);
+    } else if (result === 'google-books-success') {
+      setMessage('Google Books was connected successfully.');
+      window.history.replaceState({}, '', window.location.pathname);
     }
     void loadProviders();
+
+    const refreshConnections = () => void loadProviders();
+    window.addEventListener('focus', refreshConnections);
+    return () => window.removeEventListener('focus', refreshConnections);
   }, []);
 
   const handleDisconnect = async (provider: ConnectionProvider) => {
