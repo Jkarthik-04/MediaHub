@@ -27,7 +27,7 @@ export const getMedia: RequestHandler = async (_request, response) => {
 
 export const createManualMedia: RequestHandler = async (_request, response) => {
   const body = response.locals.validatedRequest.body as ManualMediaBody;
-  const result = await submitManualMedia(body);
+  const result = await submitManualMedia(body, response.locals.userId as string);
 
   response.status(201).json(result);
 };

@@ -9,13 +9,66 @@ export type ApiInfo = {
   version: string;
 };
 
+export type DashboardSummary = {
+  overview: {
+    totalTitles: number;
+    byStatus: Array<{ status: LibraryStatus; count: number }>;
+    byMediaType: Array<{
+      code: MediaTypeCode;
+      name: string;
+      section: LibrarySection;
+      count: number;
+    }>;
+  };
+  recentEntries: Array<{
+    id: string;
+    status: LibraryStatus;
+    progressValue: number;
+    rating: number | null;
+    updatedAt: string;
+    mediaItem: {
+      id: string;
+      title: string;
+      coverUrl: string | null;
+      totalUnits: number | null;
+      mediaType: { code: MediaTypeCode; section: LibrarySection; progressMode: string };
+    };
+  }>;
+  completionsByMonth: Array<{ month: string; count: number }>;
+  topGenres: Array<{ name: string; slug: string; titleCount: number }>;
+};
+
+export const getDashboardSummary = () =>
+  apiClient<ApiEnvelope<DashboardSummary>>('/dashboard/summary');
+
+export type MediaDetails = MediaCatalogueItem & {
+  origin: string;
+  reviewStatus: string;
+  sources: Array<{ key: string; name: string; externalId: string; sourceUrl: string }>;
+  units: Array<{
+    id: string;
+    parentUnitId: string | null;
+    unitKind: string;
+    sequenceNumber: number | null;
+    seasonNumber: number | null;
+    title: string | null;
+    durationMinutes: number | null;
+    pageCount: number | null;
+    releaseDate: string | null;
+  }>;
+  createdByUser: { id: string; displayName: string } | null;
+};
+
+export const getMediaDetails = (mediaId: string) =>
+  apiClient<ApiEnvelope<MediaDetails>>(`/media/${encodeURIComponent(mediaId)}`);
+
 export type LibraryStatus = 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'ON_HOLD' | 'DROPPED';
 
 export type LibrarySection = 'READING' | 'WATCHING';
 
 export type MediaTypeCode = 'MOVIE' | 'TV' | 'ANIME' | 'MANGA' | 'BOOK';
 
-export type LibrarySort = 'updatedAt:desc' | 'title:asc' | 'rating:desc';
+export type LibrarySort = 'updatedAt:desc' | 'title:asc' | 'rating:desc' | 'progress:desc';
 
 export type LibraryEntry = {
   id: string;
@@ -42,6 +95,13 @@ export type LibraryEntry = {
       name: string;
       slug: string;
     }>;
+    units: Array<{
+      id: string;
+      unitKind: string;
+      sequenceNumber: number | null;
+      seasonNumber: number | null;
+      title: string | null;
+    }>;
   };
   currentUnit: {
     id: string;
@@ -58,6 +118,7 @@ export type LibraryListQuery = {
   q?: string;
   status?: LibraryStatus;
   genre?: string;
+  minRating?: number;
   sort?: LibrarySort;
   page?: number;
   limit?: number;
@@ -84,6 +145,7 @@ export async function getLibrary(query: LibraryListQuery = {}): Promise<LibraryL
   if (query.q?.trim()) params.set('q', query.q.trim());
   if (query.status) params.set('status', query.status);
   if (query.genre) params.set('genre', query.genre);
+  if (query.minRating !== undefined) params.set('minRating', String(query.minRating));
   if (query.sort) params.set('sort', query.sort);
 
   if (query.page !== undefined) {
@@ -173,6 +235,84 @@ export type MediaCatalogueQuery = {
   limit?: number;
   sort?: MediaCatalogueSort;
 };
+
+export type DiscoveryMedia = {
+  provider: 'jikan' | 'omdb' | 'open-library';
+  externalId: string;
+  mediaType: MediaTypeCode;
+  title: string;
+  alternateTitles: string[];
+  description?: string;
+  releaseDate?: string;
+  coverUrl?: string;
+  genres: string[];
+  totalUnits?: number;
+  sourceUrl: string;
+};
+
+export type DiscoverySearchResponse = ApiEnvelope<DiscoveryMedia[]> & {
+  meta: {
+    provider: DiscoveryMedia['provider'];
+    page: number;
+    limit: number;
+    totalItems: number;
+    totalPages: number;
+  };
+};
+
+export type ImportJob = {
+  id: string;
+  status: string;
+  candidates: Array<{
+    id: string;
+    externalId?: string;
+    proposedAction: 'CREATE' | 'REUSE' | 'REVIEW_MATCH';
+    match: { id: string; title: string } | null;
+  }>;
+};
+
+export async function searchDiscovery(query: {
+  q: string;
+  type: Extract<MediaTypeCode, 'MOVIE' | 'ANIME' | 'BOOK' | 'MANGA'>;
+  page?: number;
+  limit?: number;
+}): Promise<DiscoverySearchResponse> {
+  const params = new URLSearchParams({ q: query.q, type: query.type });
+  if (query.page !== undefined) params.set('page', String(query.page));
+  if (query.limit !== undefined) params.set('limit', String(query.limit));
+  return apiClient<DiscoverySearchResponse>(`/discovery/search?${params.toString()}`);
+}
+
+export function previewImport(item: DiscoveryMedia, defaultLibraryStatus: LibraryStatus) {
+  return apiClient<ApiEnvelope<ImportJob>>('/imports/preview', {
+    method: 'POST',
+    body: { items: [item], defaultLibraryStatus },
+  });
+}
+
+export function confirmImport(
+  jobId: string,
+  decision: { candidateId: string; action: 'CREATE' | 'REUSE' | 'SKIP'; mediaItemId?: string },
+) {
+  return apiClient<ApiEnvelope<ImportJob>>(`/imports/${encodeURIComponent(jobId)}/confirm`, {
+    method: 'POST',
+    body: { decisions: [decision] },
+  });
+}
+
+export type ManualMediaBody = {
+  title: string;
+  mediaType: MediaTypeCode;
+  description?: string;
+  releaseYear?: number;
+  coverUrl?: string;
+  genres: string[];
+  totalUnits?: number;
+};
+
+export function submitManualMedia(body: ManualMediaBody) {
+  return apiClient<ApiEnvelope<MediaDetails>>('/media/manual', { method: 'POST', body });
+}
 
 export async function searchMedia(query: MediaCatalogueQuery): Promise<MediaCatalogueResponse> {
   const params = new URLSearchParams();

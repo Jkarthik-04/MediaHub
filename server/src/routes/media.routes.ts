@@ -1,6 +1,7 @@
 import { Router } from 'express';
 
 import { createManualMedia, getMedia, listMedia } from '../controllers/media.controller.js';
+import { requireUser } from '../middleware/require-user.js';
 import { validateRequest } from '../middleware/validate-request.js';
 import {
   manualMediaBodySchema,
@@ -11,5 +12,10 @@ import {
 export const mediaRouter = Router();
 
 mediaRouter.get('/', validateRequest('query', mediaListQuerySchema), listMedia);
-mediaRouter.post('/manual', validateRequest('body', manualMediaBodySchema), createManualMedia);
+mediaRouter.post(
+  '/manual',
+  requireUser,
+  validateRequest('body', manualMediaBodySchema),
+  createManualMedia,
+);
 mediaRouter.get('/:mediaId', validateRequest('params', mediaIdParamsSchema), getMedia);

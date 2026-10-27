@@ -123,12 +123,18 @@ before(async () => {
 
 after(async () => {
   globalThis.fetch = nativeFetch;
-  await cleanupTestData();
-  await new Promise<void>((resolve, reject) => {
-    server.close((error) => (error ? reject(error) : resolve()));
-  });
-  await disconnectSessionStore();
-  await prisma.$disconnect();
+  try {
+    await cleanupTestData();
+  } finally {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    } finally {
+      await disconnectSessionStore();
+      await prisma.$disconnect();
+    }
+  }
 });
 
 test('MediaHub API security and core workflow', async (t) => {
@@ -184,6 +190,12 @@ test('MediaHub API security and core workflow', async (t) => {
     const adminOverview = adminRequest.body.data as { activeUsers: number; enabledSources: number };
     assert.ok(adminOverview.activeUsers >= 2);
     assert.ok(adminOverview.enabledSources >= 1);
+
+    const userManualQueue = await api('/admin/manual-media/pending');
+    assert.equal(userManualQueue.response.status, 403);
+    const adminManualQueue = await apiAsAdmin('/admin/manual-media/pending');
+    assert.equal(adminManualQueue.response.status, 200);
+    assert.ok(Array.isArray(adminManualQueue.body.data));
 
     const otherUsersEntry = await api('/library/30000000-0000-4000-8000-000000000003', {
       method: 'PATCH',
