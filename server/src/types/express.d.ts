@@ -10,4 +10,14 @@ declare global {
   }
 }
 
+declare module 'express-session' {
+  interface SessionData {
+    connectionOAuth?: {
+      provider: 'anilist';
+      state: string;
+      createdAt: number;
+    };
+  }
+}
+
 export {};

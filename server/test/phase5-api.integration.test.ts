@@ -6,6 +6,7 @@ import { sign } from 'cookie-signature';
 import { createApp } from '../src/app.js';
 import {
   getSessionSecret,
+  isAniListOAuthConfigured,
   isGoogleOAuthConfigured,
   sessionCookieName,
   sessionMaxAgeMilliseconds,
@@ -176,6 +177,30 @@ test('MediaHub API security and core workflow', async (t) => {
     const profileData = profile.body.data as { id: string; role: string };
     assert.equal(profileData.id, testUserId);
     assert.equal(profileData.role, 'USER');
+
+    const connections = await api('/connections');
+    assert.equal(connections.response.status, 200);
+    const connectionProviders = connections.body.data as Array<{ key: string }>;
+    assert.deepEqual(
+      connectionProviders.map(({ key }) => key),
+      ['anilist', 'trakt', 'google-books', 'mangadex'],
+    );
+    const serializedConnections = JSON.stringify(connections.body);
+    assert.equal(serializedConnections.includes('accessTokenEncrypted'), false);
+    assert.equal(serializedConnections.includes('refreshTokenEncrypted'), false);
+
+    const aniListConnect = await nativeFetch(`${baseUrl}/connections/anilist/connect`, {
+      headers: { Cookie: getSessionCookie(testSessionId) },
+      redirect: 'manual',
+    });
+    if (isAniListOAuthConfigured()) {
+      assert.equal(aniListConnect.status, 302);
+      assert.match(aniListConnect.headers.get('location') ?? '', /^https:\/\/anilist\.co\//);
+    } else {
+      assert.equal(aniListConnect.status, 503);
+      const connectionError = (await aniListConnect.json()) as { error: { code: string } };
+      assert.equal(connectionError.error.code, 'CONNECTION_NOT_CONFIGURED');
+    }
 
     const expired = await apiForSession(expiredSessionId, '/auth/me');
     assert.equal(expired.response.status, 401);

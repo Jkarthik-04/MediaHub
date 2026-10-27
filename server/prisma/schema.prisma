@@ -121,6 +121,15 @@ enum RecommendationFeedback {
   @@map("recommendation_feedback")
 }
 
+enum ConnectionStatus {
+  CONNECTED
+  EXPIRED
+  REVOKED
+  ERROR
+
+  @@map("connection_status")
+}
+
 model Role {
   id    Int    @id @default(autoincrement()) @db.SmallInt
   name  String @unique @db.VarChar(30)
@@ -143,6 +152,7 @@ model User {
   submittedMedia  MediaItem[]      @relation("MediaItemCreator")
   libraryEntries  LibraryEntry[]
   ingestionJobs   IngestionJob[]
+  connections     UserConnection[]
   recommendations Recommendation[]
   auditLogs       AuditLog[]       @relation("AuditActor")
 
@@ -291,8 +301,34 @@ model Source {
   externalMappings    ExternalMapping[]
   ingestionJobs       IngestionJob[]
   ingestionCandidates IngestionCandidate[]
+  userConnections     UserConnection[]
 
   @@map("sources")
+}
+
+model UserConnection {
+  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                String           @map("user_id") @db.Uuid
+  sourceId              Int              @map("source_id") @db.SmallInt
+  externalUserId        String           @map("external_user_id") @db.VarChar(255)
+  externalUsername      String?          @map("external_username") @db.VarChar(255)
+  accessTokenEncrypted  String?          @map("access_token_encrypted") @db.Text
+  refreshTokenEncrypted String?          @map("refresh_token_encrypted") @db.Text
+  tokenExpiresAt        DateTime?        @map("token_expires_at") @db.Timestamptz(6)
+  scopes                String[]         @default([])
+  status                ConnectionStatus @default(CONNECTED)
+  syncCursor            Json?            @map("sync_cursor") @db.JsonB
+  lastSyncedAt          DateTime?        @map("last_synced_at") @db.Timestamptz(6)
+  lastError             String?          @map("last_error") @db.Text
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source                Source           @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, sourceId])
+  @@index([userId, status])
+  @@index([sourceId, status])
+  @@map("user_connections")
 }
 
 model ExternalMapping {

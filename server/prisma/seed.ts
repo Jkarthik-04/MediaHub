@@ -156,6 +156,27 @@ async function seedDatabase() {
           isEnabled: true,
         },
         {
+          key: 'anilist',
+          name: 'AniList',
+          connectorKind: ConnectorKind.API,
+          baseUrl: 'https://graphql.anilist.co',
+          isEnabled: true,
+        },
+        {
+          key: 'trakt',
+          name: 'Trakt',
+          connectorKind: ConnectorKind.API,
+          baseUrl: 'https://api.trakt.tv',
+          isEnabled: true,
+        },
+        {
+          key: 'mangadex',
+          name: 'MangaDex',
+          connectorKind: ConnectorKind.API,
+          baseUrl: 'https://api.mangadex.org',
+          isEnabled: true,
+        },
+        {
           key: 'kitsu',
           name: 'Kitsu',
           connectorKind: ConnectorKind.API,
