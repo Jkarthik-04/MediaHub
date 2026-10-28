@@ -12,15 +12,13 @@ import {
 export function ConnectionsPage() {
   const [providers, setProviders] = useState<ConnectionProvider[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [disconnecting, setDisconnecting] = useState<ConnectionProvider['key'] | null>(null);
-  const [syncing, setSyncing] = useState<ConnectionProvider['key'] | null>(null);
-  const [failedLogos, setFailedLogos] = useState<ConnectionProvider['key'][]>([]);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState<string | null>(null);
+  const [failedLogos, setFailedLogos] = useState<string[]>([]);
 
   const loadProviders = async () => {
     setLoading(true);
-    setError('');
     try {
       const response = await getConnectionProviders();
       setProviders(response.data);
@@ -32,52 +30,28 @@ export function ConnectionsPage() {
   };
 
   useEffect(() => {
-    const result = new URLSearchParams(window.location.search).get('connection');
-    const connectedProvider =
-      result === 'anilist-success'
-        ? { key: 'anilist' as const, name: 'AniList' }
-        : result === 'trakt-success'
-          ? { key: 'trakt' as const, name: 'Trakt' }
-          : result === 'google-books-success'
-            ? { key: 'google-books' as const, name: 'Google Books' }
-            : null;
-    if (connectedProvider) {
-      setMessage(`${connectedProvider.name} was connected. Importing your library…`);
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-
-    const initializeConnections = async () => {
-      await loadProviders();
-      if (!connectedProvider) return;
-
-      setSyncing(connectedProvider.key);
-      setError('');
-      try {
-        const response = await syncConnection(connectedProvider.key);
-        setMessage(
-          `${connectedProvider.name} was connected and synced: ${response.data.imported} added and ${response.data.updated} updated.`,
-        );
-        await loadProviders();
-      } catch (caughtError) {
-        setMessage(`${connectedProvider.name} was connected, but its first sync did not finish.`);
-        setError(
-          caughtError instanceof Error ? caughtError.message : 'Use Sync now to retry the import.',
-        );
-      } finally {
-        setSyncing(null);
-      }
-    };
-    void initializeConnections();
-
-    const refreshConnections = () => void loadProviders();
-    window.addEventListener('focus', refreshConnections);
-    return () => window.removeEventListener('focus', refreshConnections);
+    void loadProviders();
   }, []);
 
-  const handleDisconnect = async (provider: ConnectionProvider) => {
-    setDisconnecting(provider.key);
+  const runSync = async (provider: ConnectionProvider) => {
+    setBusy(provider.key);
     setError('');
-    setMessage('');
+    try {
+      const response = await syncConnection(provider.key);
+      setMessage(
+        `${provider.name}: ${response.data.imported} added, ${response.data.updated} updated.`,
+      );
+      await loadProviders();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Unable to sync account.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const removeConnection = async (provider: ConnectionProvider) => {
+    setBusy(provider.key);
+    setError('');
     try {
       await disconnectProvider(provider.key);
       setMessage(`${provider.name} was disconnected.`);
@@ -87,65 +61,33 @@ export function ConnectionsPage() {
         caughtError instanceof Error ? caughtError.message : 'Unable to disconnect account.',
       );
     } finally {
-      setDisconnecting(null);
-    }
-  };
-
-  const handleSync = async (provider: ConnectionProvider) => {
-    setSyncing(provider.key);
-    setError('');
-    setMessage('');
-    try {
-      const response = await syncConnection(provider.key);
-      setMessage(
-        `${provider.name} sync complete: ${response.data.imported} added and ${response.data.updated} updated.`,
-      );
-      await loadProviders();
-    } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Unable to sync account.');
-    } finally {
-      setSyncing(null);
+      setBusy(null);
     }
   };
 
   return (
     <div className="page-stack">
-      <PageHeader eyebrow="Your account" title="Connected websites">
-        Link supported media accounts to bring your existing lists and progress into MediaHub.
+      <PageHeader eyebrow="Your account" title="Connected apps">
+        Link supported media websites to import your existing lists and progress into MediaHub.
       </PageHeader>
-
       <section className="surface">
-        <h2>How connections work</h2>
+        <h2>Manage connected websites</h2>
         <p>
-          MediaHub redirects you to the provider for approval. Provider passwords are never entered
-          or stored here. Imported titles will pass through the existing duplicate-checking
-          workflow.
+          Provider passwords are never entered or stored here. Imported titles pass through the
+          duplicate-checking workflow before they are added to your library.
         </p>
       </section>
-
-      {error && (
-        <div className="surface" role="alert">
-          {error}
-        </div>
-      )}
-      {message && (
-        <div className="surface" role="status">
-          {message}
-        </div>
-      )}
-
+      {error && <div className="surface profile-message-error">{error}</div>}
+      {message && <div className="surface profile-message">{message}</div>}
       {loading ? (
-        <div className="surface" role="status">
-          Loading supported websites…
-        </div>
+        <div className="surface">Loading connected apps…</div>
       ) : (
-        <section className="metric-grid" aria-label="Supported website connections">
+        <section className="metric-grid" aria-label="Connected apps">
           {providers.map((provider) => {
             const connection = provider.connection;
             const logoFailed = failedLogos.includes(provider.key);
             return (
               <article className="surface" key={provider.key}>
-                <p className="eyebrow">{provider.media.join(' · ')}</p>
                 <div className="provider-card-heading">
                   {logoFailed ? (
                     <span className="provider-logo-fallback" aria-hidden="true">
@@ -157,64 +99,51 @@ export function ConnectionsPage() {
                       src={provider.logoUrl}
                       alt={`${provider.name} logo`}
                       onError={() =>
-                        setFailedLogos((current) =>
-                          current.includes(provider.key) ? current : [...current, provider.key],
-                        )
+                        setFailedLogos((current) => [...new Set([...current, provider.key])])
                       }
                     />
                   )}
-                  <h2>{provider.name}</h2>
+                  <div>
+                    <p className="eyebrow">{provider.media.join(' · ')}</p>
+                    <h2>{provider.name}</h2>
+                  </div>
                 </div>
                 <p>{provider.description}</p>
+                <p className="muted">
+                  {connection
+                    ? `${connection.status}${connection.externalUsername ? ` · ${connection.externalUsername}` : ''}`
+                    : 'Not connected'}
+                </p>
                 {connection ? (
-                  <>
-                    <p>
-                      <strong>{connection.status}</strong>
-                      {connection.externalUsername ? ` · ${connection.externalUsername}` : ''}
-                    </p>
-                    <p className="muted">
-                      Last synced:{' '}
-                      {connection.lastSyncedAt
-                        ? new Date(connection.lastSyncedAt).toLocaleString()
-                        : 'Not synced yet'}
-                    </p>
+                  <div className="control-row">
                     {provider.syncAvailable && (
                       <button
                         className="button button-primary"
+                        disabled={busy === provider.key}
+                        onClick={() => void runSync(provider)}
                         type="button"
-                        disabled={syncing === provider.key}
-                        onClick={() => void handleSync(provider)}
                       >
-                        {syncing === provider.key ? 'Syncing…' : 'Sync now'}
+                        {busy === provider.key ? 'Working…' : 'Sync now'}
                       </button>
                     )}
                     <button
                       className="button button-secondary"
+                      disabled={busy === provider.key}
+                      onClick={() => void removeConnection(provider)}
                       type="button"
-                      disabled={disconnecting === provider.key}
-                      onClick={() => void handleDisconnect(provider)}
                     >
-                      {disconnecting === provider.key ? 'Disconnecting…' : 'Disconnect'}
+                      Disconnect
                     </button>
-                  </>
+                  </div>
                 ) : (
-                  <>
-                    <p className="muted">
-                      {provider.configured
-                        ? 'Ready to connect securely with OAuth.'
-                        : 'Provider credentials have not been configured.'}
-                    </p>
-                    <button
-                      className="button button-primary"
-                      type="button"
-                      disabled={!provider.connectAvailable}
-                      onClick={() => {
-                        window.location.assign(getProviderConnectUrl(provider.key));
-                      }}
-                    >
-                      {provider.connectAvailable ? 'Connect' : 'Coming next'}
-                    </button>
-                  </>
+                  <button
+                    className="button button-primary"
+                    disabled={!provider.connectAvailable}
+                    onClick={() => window.location.assign(getProviderConnectUrl(provider.key))}
+                    type="button"
+                  >
+                    {provider.connectAvailable ? 'Connect' : 'Unavailable'}
+                  </button>
                 )}
               </article>
             );

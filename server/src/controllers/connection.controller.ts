@@ -67,7 +67,7 @@ export const finishAniListConnection: RequestHandler = async (request, response)
   }
 
   await connectAniListAccount(response.locals.userId as string, code);
-  response.redirect(`${clientOrigin}/connections?connection=anilist-success`);
+  response.redirect(`${clientOrigin}/?connection=anilist-success`);
 };
 
 export const startTraktConnection: RequestHandler = (request, response) => {
@@ -104,7 +104,7 @@ export const finishTraktConnection: RequestHandler = async (request, response) =
   }
 
   await connectTraktAccount(response.locals.userId as string, code, savedState.codeVerifier);
-  response.redirect(`${clientOrigin}/connections?connection=trakt-success`);
+  response.redirect(`${clientOrigin}/?connection=trakt-success`);
 };
 
 export const startGoogleBooksConnection: RequestHandler = (request, response) => {
@@ -141,5 +141,5 @@ export const finishGoogleBooksConnection: RequestHandler = async (request, respo
   }
 
   await connectGoogleBooksAccount(response.locals.userId as string, code, savedState.codeVerifier);
-  response.redirect(`${clientOrigin}/connections?connection=google-books-success`);
+  response.redirect(`${clientOrigin}/?connection=google-books-success`);
 };
