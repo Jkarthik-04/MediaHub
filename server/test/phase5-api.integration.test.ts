@@ -660,6 +660,54 @@ test('MediaHub API security and core workflow', async (t) => {
     assert.equal(removed.response.status, 204);
   });
 
+  await t.test('generates explainable recommendations and records feedback', async () => {
+    const created = await api('/library', {
+      method: 'POST',
+      body: JSON.stringify({ mediaItemId: interstellarId, status: 'COMPLETED', rating: 9 }),
+    });
+    assert.equal(created.response.status, 201);
+    const entry = created.body.data as { id: string };
+
+    try {
+      const refreshed = await api('/recommendations/refresh?limit=5', { method: 'POST' });
+      assert.equal(refreshed.response.status, 200);
+      const recommendations = refreshed.body.data as Array<{
+        id: string;
+        score: number;
+        reason: string;
+        modelVersion: string;
+        mediaItem: { id: string; genres: Array<{ slug: string }> };
+      }>;
+      assert.ok(recommendations.length > 0);
+      assert.equal(
+        recommendations.some((item) => item.mediaItem.id === interstellarId),
+        false,
+      );
+      assert.equal(recommendations[0]?.modelVersion, 'genre-vector-v1');
+      assert.ok((recommendations[0]?.score ?? 0) > 0);
+      assert.match(recommendations[0]?.reason ?? '', /Matches your interest in/);
+      assert.ok((recommendations[0]?.mediaItem.genres.length ?? 0) > 0);
+
+      const recommendationId = recommendations[0]?.id;
+      assert.ok(recommendationId);
+      const feedback = await api(`/recommendations/${recommendationId}/feedback`, {
+        method: 'POST',
+        body: JSON.stringify({ feedback: 'NOT_INTERESTED' }),
+      });
+      assert.equal(feedback.response.status, 200);
+
+      const current = await api('/recommendations?limit=5');
+      assert.equal(current.response.status, 200);
+      const currentRecommendations = current.body.data as Array<{ id: string }>;
+      assert.equal(
+        currentRecommendations.some((item) => item.id === recommendationId),
+        false,
+      );
+    } finally {
+      await api(`/library/${entry.id}`, { method: 'DELETE' });
+    }
+  });
+
   await t.test('logs out and invalidates the server-side session', async () => {
     const loggedOut = await api('/auth/logout', { method: 'POST' });
     assert.equal(loggedOut.response.status, 204);

@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { EmptyState } from '../components/PageStates';
 import { PageHeader } from '../components/PageHeader';
 import { Pagination } from '../components/Pagination';
+import { RecommendationSection } from '../components/RecommendationSection';
 import { ApiError } from '../services/api-client';
 import { isCatalogueItemInLibrary, isProviderItemInLibrary } from '../utils/discovery-duplicates';
 import {
@@ -341,6 +342,12 @@ export function DiscoveryPage() {
         Search the MediaHub catalogue for movies, TV shows, and anime. Discover books and manga
         through external providers, then import them into the correct library.
       </PageHeader>
+
+      <RecommendationSection
+        libraryMediaIds={libraryMediaIds}
+        libraryLoading={libraryLoading}
+        onLibraryChanged={() => setSearchVersion((version) => version + 1)}
+      />
 
       <section className="surface">
         <form onSubmit={handleSearch}>
