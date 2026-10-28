@@ -30,15 +30,25 @@ export const findMediaTypeMap = async (codes: string[]) => {
   return new Map(types.map((type) => [type.code, type.id]));
 };
 
-export const findExternalMatch = (sourceId: number, externalId: string) =>
-  prisma.externalMapping.findUnique({
-    where: { sourceId_externalId: { sourceId, externalId } },
+export const findExternalMatch = (sourceId: number, externalId: string, mediaTypeId: number) =>
+  prisma.externalMapping.findFirst({
+    where: {
+      sourceId,
+      externalId,
+      mediaItem: { mediaTypeId, isActive: true, reviewStatus: 'APPROVED' },
+    },
     select: { mediaItemId: true },
   });
 
 export const findTitleMatch = (mediaTypeId: number, normalizedTitle: string) =>
   prisma.mediaItem.findFirst({
     where: { mediaTypeId, normalizedTitle, isActive: true, reviewStatus: 'APPROVED' },
+    select: { id: true },
+  });
+
+export const findLibraryEntryByUserAndMedia = (userId: string, mediaItemId: string) =>
+  prisma.libraryEntry.findUnique({
+    where: { userId_mediaItemId: { userId, mediaItemId } },
     select: { id: true },
   });
 
@@ -132,7 +142,13 @@ export const confirmImport = (userId: string, jobId: string, decisions: Prepared
     for (const decision of decisions) {
       const candidate = await transaction.ingestionCandidate.findFirst({
         where: { id: decision.candidateId, jobId },
-        select: { id: true, sourceId: true, externalId: true, mediaTypeId: true },
+        select: {
+          id: true,
+          sourceId: true,
+          externalId: true,
+          mediaTypeId: true,
+          matchMediaId: true,
+        },
       });
       if (!candidate) {
         throw new AppError(400, 'INVALID_CANDIDATE', 'An import candidate is invalid.');
@@ -145,6 +161,36 @@ export const confirmImport = (userId: string, jobId: string, decisions: Prepared
         });
         skippedCount += 1;
         continue;
+      }
+
+      const providerMatch = await transaction.externalMapping.findFirst({
+        where: {
+          sourceId: candidate.sourceId,
+          externalId: candidate.externalId,
+          mediaItem: {
+            mediaTypeId: candidate.mediaTypeId,
+            isActive: true,
+            reviewStatus: 'APPROVED',
+          },
+        },
+        select: { mediaItemId: true },
+      });
+      const knownMediaIds = [candidate.matchMediaId, providerMatch?.mediaItemId].filter(
+        (mediaItemId): mediaItemId is string => Boolean(mediaItemId),
+      );
+
+      for (const mediaItemId of new Set(knownMediaIds)) {
+        const existingEntry = await transaction.libraryEntry.findUnique({
+          where: { userId_mediaItemId: { userId, mediaItemId } },
+          select: { id: true },
+        });
+        if (existingEntry) {
+          throw new AppError(
+            409,
+            'LIBRARY_ENTRY_EXISTS',
+            'This title already exists in your list.',
+          );
+        }
       }
 
       let mediaItemId = decision.targetMediaId;
@@ -162,6 +208,18 @@ export const confirmImport = (userId: string, jobId: string, decisions: Prepared
           : null;
         if (!target) {
           throw new AppError(400, 'INVALID_REUSE_TARGET', 'The reuse target is invalid.');
+        }
+        mediaItemId = target.id;
+        const existingEntry = await transaction.libraryEntry.findUnique({
+          where: { userId_mediaItemId: { userId, mediaItemId } },
+          select: { id: true },
+        });
+        if (existingEntry) {
+          throw new AppError(
+            409,
+            'LIBRARY_ENTRY_EXISTS',
+            'This title already exists in your list.',
+          );
         }
       } else {
         const genreIds: number[] = [];
