@@ -788,3 +788,35 @@ code {
     flex-direction: column;
   }
 }
+
+.account-section {
+  padding: 1.5rem;
+}
+.account-section h2 {
+  margin-top: 0;
+}
+.account-danger {
+  border-color: rgb(248 113 113 / 45%);
+}
+.button-danger {
+  background: #b42332;
+  color: #fff;
+  border: 1px solid #ff7180;
+}
+.button-danger:hover:not(:disabled) {
+  background: #d12f40;
+}
+.account-code {
+  display: grid;
+  max-width: 18rem;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.account-code input {
+  padding: 0.75rem;
+  color: inherit;
+  background: #111a30;
+  border: 1px solid rgb(180 196 255 / 28%);
+  border-radius: 0.5rem;
+  letter-spacing: 0.3em;
+}

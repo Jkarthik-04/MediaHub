@@ -17,6 +17,7 @@ import { connectionRouter } from './routes/connection.routes.js';
 import { importRouter } from './routes/import.routes.js';
 import { libraryRouter } from './routes/library.routes.js';
 import { mediaRouter } from './routes/media.routes.js';
+import { accountRouter } from './routes/account.routes.js';
 import { prisma } from './utils/prisma.js';
 
 export const createApp = () => {
@@ -75,6 +76,7 @@ export const createApp = () => {
   });
 
   app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/account', accountRouter);
   app.use('/api/v1/admin', adminRouter);
   app.use('/api/v1/media', mediaRouter);
   app.use('/api/v1/library', libraryRouter);

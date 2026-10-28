@@ -141,3 +141,7 @@ docs/             Planning and database documentation
 - [Query-plan and database-object evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md)
 - [Phase 6 authentication, authorization, and security](docs/phase-6/AUTHORIZATION_AND_SECURITY.md)
 - [Individual Git collaboration guide](docs/GIT_COLLABORATION_GUIDE.md)
+
+### Account deletion email configuration
+
+Account deletion verification codes are sent through Resend's email API. Configure `RESEND_API_KEY` and `ACCOUNT_EMAIL_FROM` (a sender address verified with Resend) in the server environment. `OTP_PEPPER` is an optional high-entropy secret used in OTP hashing; if omitted, the session secret is used. Keep the selected secret consistent across server instances. Codes expire after 10 minutes, allow five incorrect attempts, and can be re-requested once per minute (with an additional five requests per hour per client IP). The account backup is available at `GET /api/v1/account/backup`; deletion endpoints are `POST /api/v1/account/deletion-code` and `POST /api/v1/account/delete`.

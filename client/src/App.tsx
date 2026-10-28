@@ -5,6 +5,7 @@ import { RequireRole } from './auth/RequireRole';
 import { AppShell } from './components/AppShell';
 import { AdminPage } from './pages/AdminPage';
 import { ConnectionsPage } from './pages/ConnectionsPage';
+import { AccountPage } from './pages/AccountPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { DiscoveryPage } from './pages/DiscoveryPage';
 import { MediaDetailsPage } from './pages/MediaDetailsPage';
@@ -27,6 +28,7 @@ function App() {
           <Route path="media/:mediaId" element={<MediaDetailsPage />} />
           <Route path="recommendations" element={<RecommendationsPage />} />
           <Route path="connections" element={<ConnectionsPage />} />
+          <Route path="account" element={<AccountPage />} />
           <Route
             path="admin"
             element={

@@ -15,12 +15,14 @@ import {
 } from '../src/config/security.js';
 import { disconnectSessionStore } from '../src/config/session.js';
 import { prisma } from '../src/utils/prisma.js';
+import { requestDeletionCode } from '../src/services/account.service.js';
 
 const testUserId = '90000000-0000-4000-8000-000000000001';
 const testSessionId = 'phase6-integration-session';
 const adminUserId = '00000000-0000-4000-8000-000000000001';
 const adminSessionId = 'phase6-admin-session';
 const expiredSessionId = 'phase6-expired-session';
+const deletionSessionId = 'account-deletion-integration-session';
 const interstellarId = '10000000-0000-4000-8000-000000000001';
 const breakingBadId = '10000000-0000-4000-8000-000000000002';
 const attackOnTitanId = '10000000-0000-4000-8000-000000000003';
@@ -36,7 +38,7 @@ type JsonObject = Record<string, unknown>;
 const cleanupTestData = async () => {
   await prisma.auditLog.deleteMany({ where: { actorUserId: testUserId } });
   await prisma.userSession.deleteMany({
-    where: { sid: { in: [testSessionId, adminSessionId, expiredSessionId] } },
+    where: { sid: { in: [testSessionId, adminSessionId, expiredSessionId, deletionSessionId] } },
   });
   await prisma.user.deleteMany({ where: { id: testUserId } });
 };
@@ -666,5 +668,138 @@ test('MediaHub API security and core workflow', async (t) => {
 
     const profileAfterLogout = await api('/auth/me');
     assert.equal(profileAfterLogout.response.status, 401);
+  });
+
+  await t.test('exports only the signed-in user and deletes a verified account', async () => {
+    await prisma.userSession.create({
+      data: {
+        sid: deletionSessionId,
+        sess: {
+          cookie: {
+            originalMaxAge: sessionMaxAgeMilliseconds,
+            expires: new Date(Date.now() + sessionMaxAgeMilliseconds).toISOString(),
+            httpOnly: true,
+            path: '/',
+            sameSite: 'lax',
+            secure: false,
+          },
+          passport: { user: testUserId },
+        },
+        expire: new Date(Date.now() + sessionMaxAgeMilliseconds),
+      },
+    });
+    const ownBackup = await apiForSession(deletionSessionId, '/account/backup');
+    assert.equal(ownBackup.response.status, 200);
+    const ownBody = ownBackup.body;
+    assert.equal(ownBody.schemaVersion, '1.0');
+    assert.equal((ownBody.account as { id: string }).id, testUserId);
+    assert.equal(JSON.stringify(ownBody).includes('googleSubject'), false);
+    assert.equal(JSON.stringify(ownBody).includes('accessTokenEncrypted'), false);
+    assert.equal(JSON.stringify(ownBody).includes('refreshTokenEncrypted'), false);
+    assert.equal(JSON.stringify(ownBody).includes('codeHash'), false);
+    assert.match(
+      ownBackup.response.headers.get('content-disposition') ?? '',
+      /attachment; filename=/,
+    );
+    const adminBackup = await apiAsAdmin('/account/backup');
+    assert.equal((adminBackup.body.account as { id: string }).id, adminUserId);
+
+    await assert.rejects(
+      () =>
+        requestDeletionCode(testUserId, 'phase5-integration@mediahub.test', async () => {
+          throw new Error('mock email delivery failure');
+        }),
+      /mock email delivery failure/,
+    );
+    assert.equal(await prisma.user.count({ where: { id: testUserId } }), 1);
+    assert.equal(await prisma.accountDeletionChallenge.count({ where: { userId: testUserId } }), 0);
+
+    let deliveredCode = '';
+    await requestDeletionCode(
+      testUserId,
+      'phase5-integration@mediahub.test',
+      async (email, code) => {
+        assert.equal(email, 'phase5-integration@mediahub.test');
+        deliveredCode = code;
+      },
+    );
+    assert.match(deliveredCode, /^\d{6}$/);
+    await assert.rejects(
+      () =>
+        requestDeletionCode(testUserId, 'phase5-integration@mediahub.test', async () =>
+          assert.fail('The resend cooldown should prevent a second email.'),
+        ),
+      { code: 'OTP_RATE_LIMITED' },
+    );
+    const wrongCode = await apiForSession(deletionSessionId, '/account/delete', {
+      method: 'POST',
+      body: JSON.stringify({
+        code: deliveredCode === '111111' ? '000000' : '111111',
+        confirm: true,
+        userId: adminUserId,
+      }),
+    });
+    assert.equal(wrongCode.response.status, 400);
+    assert.equal(await prisma.user.count({ where: { id: testUserId } }), 1);
+    let lastWrongCode = wrongCode;
+    for (let attempt = 1; attempt < 5; attempt += 1) {
+      lastWrongCode = await apiForSession(deletionSessionId, '/account/delete', {
+        method: 'POST',
+        body: JSON.stringify({
+          code: deliveredCode === '111111' ? '000000' : '111111',
+          confirm: true,
+        }),
+      });
+      assert.equal(lastWrongCode.response.status, 400);
+    }
+    assert.equal((lastWrongCode.body.error as { code: string }).code, 'OTP_ATTEMPTS_EXHAUSTED');
+    await prisma.accountDeletionChallenge.update({
+      where: { userId: testUserId },
+      data: { expiresAt: new Date(Date.now() - 1) },
+    });
+    const expiredCode = await apiForSession(deletionSessionId, '/account/delete', {
+      method: 'POST',
+      body: JSON.stringify({ code: deliveredCode, confirm: true }),
+    });
+    assert.equal(expiredCode.response.status, 400);
+    await prisma.accountDeletionChallenge.delete({ where: { userId: testUserId } });
+    deliveredCode = '';
+    await requestDeletionCode(
+      testUserId,
+      'phase5-integration@mediahub.test',
+      async (_email, code) => {
+        deliveredCode = code;
+      },
+    );
+    const missingConfirmation = await apiForSession(deletionSessionId, '/account/delete', {
+      method: 'POST',
+      body: JSON.stringify({ code: deliveredCode, confirm: false }),
+    });
+    assert.equal(missingConfirmation.response.status, 400);
+    assert.equal(await prisma.user.count({ where: { id: testUserId } }), 1);
+    const sharedMediaBefore = await prisma.mediaItem.count({ where: { id: interstellarId } });
+    const deleted = await apiForSession(deletionSessionId, '/account/delete', {
+      method: 'POST',
+      body: JSON.stringify({ code: deliveredCode, confirm: true }),
+    });
+    assert.equal(deleted.response.status, 204);
+    assert.equal(await prisma.user.count({ where: { id: testUserId } }), 0);
+    assert.equal(
+      await prisma.userSession.count({
+        where: { sid: { in: [testSessionId, expiredSessionId, deletionSessionId] } },
+      }),
+      0,
+    );
+    assert.equal(await prisma.accountDeletionChallenge.count({ where: { userId: testUserId } }), 0);
+    assert.equal(
+      await prisma.mediaItem.count({ where: { id: interstellarId } }),
+      sharedMediaBefore,
+    );
+    assert.equal((await apiForSession(testSessionId, '/auth/me')).response.status, 401);
+    const replayedCode = await apiForSession(deletionSessionId, '/account/delete', {
+      method: 'POST',
+      body: JSON.stringify({ code: deliveredCode, confirm: true }),
+    });
+    assert.equal(replayedCode.response.status, 401);
   });
 });
