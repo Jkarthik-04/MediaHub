@@ -15,6 +15,7 @@ const providers = [
   {
     key: 'anilist',
     name: 'AniList',
+    logoUrl: 'https://cdn.simpleicons.org/anilist/02A9FF',
     media: ['ANIME', 'MANGA'],
     description: 'Import anime and manga lists, ratings, status, and progress.',
     mode: 'OAUTH',
@@ -25,6 +26,7 @@ const providers = [
   {
     key: 'trakt',
     name: 'Trakt',
+    logoUrl: 'https://cdn.simpleicons.org/trakt/ED1C24',
     media: ['MOVIE', 'TV'],
     description: 'Import movie and show watchlists, history, ratings, and episode progress.',
     mode: 'OAUTH',
@@ -35,6 +37,7 @@ const providers = [
   {
     key: 'google-books',
     name: 'Google Books',
+    logoUrl: 'https://cdn.simpleicons.org/googlebooks/4285F4',
     media: ['BOOK'],
     description: 'Import saved volumes from your Google Books My Library shelves.',
     mode: 'OAUTH',

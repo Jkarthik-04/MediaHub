@@ -16,6 +16,7 @@ export function ConnectionsPage() {
   const [message, setMessage] = useState('');
   const [disconnecting, setDisconnecting] = useState<ConnectionProvider['key'] | null>(null);
   const [syncing, setSyncing] = useState<ConnectionProvider['key'] | null>(null);
+  const [failedLogos, setFailedLogos] = useState<ConnectionProvider['key'][]>([]);
 
   const loadProviders = async () => {
     setLoading(true);
@@ -141,10 +142,29 @@ export function ConnectionsPage() {
         <section className="metric-grid" aria-label="Supported website connections">
           {providers.map((provider) => {
             const connection = provider.connection;
+            const logoFailed = failedLogos.includes(provider.key);
             return (
               <article className="surface" key={provider.key}>
                 <p className="eyebrow">{provider.media.join(' · ')}</p>
-                <h2>{provider.name}</h2>
+                <div className="provider-card-heading">
+                  {logoFailed ? (
+                    <span className="provider-logo-fallback" aria-hidden="true">
+                      {provider.name.slice(0, 1)}
+                    </span>
+                  ) : (
+                    <img
+                      className="provider-logo"
+                      src={provider.logoUrl}
+                      alt={`${provider.name} logo`}
+                      onError={() =>
+                        setFailedLogos((current) =>
+                          current.includes(provider.key) ? current : [...current, provider.key],
+                        )
+                      }
+                    />
+                  )}
+                  <h2>{provider.name}</h2>
+                </div>
                 <p>{provider.description}</p>
                 {connection ? (
                   <>

@@ -341,6 +341,7 @@ export function addLibraryEntry(mediaItemId: string, status: LibraryStatus = 'PL
 export type ConnectionProvider = {
   key: 'anilist' | 'trakt' | 'google-books';
   name: string;
+  logoUrl: string;
   media: MediaTypeCode[];
   description: string;
   mode: 'OAUTH';

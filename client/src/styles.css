@@ -219,6 +219,33 @@ h2 {
   gap: 0.8rem;
   padding: 1.25rem;
 }
+.provider-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.provider-card-heading h2 {
+  margin: 0;
+}
+.provider-logo,
+.provider-logo-fallback {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgb(180 196 255 / 24%);
+  border-radius: 0.7rem;
+  background: #0e1730;
+}
+.provider-logo {
+  padding: 0.45rem;
+  object-fit: contain;
+}
+.provider-logo-fallback {
+  color: #d9f99d;
+  font-weight: 850;
+}
 .control-row,
 .filter-grid {
   display: flex;
