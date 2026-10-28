@@ -1,4 +1,4 @@
-import { createCipheriv, createHash, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 
 const getEncryptionKey = () => {
   const secret = process.env.CONNECTION_TOKEN_ENCRYPTION_KEY;
@@ -18,4 +18,22 @@ export const encryptConnectionToken = (token: string) => {
     authenticationTag.toString('base64url'),
     encrypted.toString('base64url'),
   ].join(':');
+};
+
+export const decryptConnectionToken = (value: string) => {
+  const [version, encodedIv, encodedTag, encodedValue] = value.split(':');
+  if (version !== 'v1' || !encodedIv || !encodedTag || !encodedValue) {
+    throw new Error('The stored connection token is invalid.');
+  }
+
+  const decipher = createDecipheriv(
+    'aes-256-gcm',
+    getEncryptionKey(),
+    Buffer.from(encodedIv, 'base64url'),
+  );
+  decipher.setAuthTag(Buffer.from(encodedTag, 'base64url'));
+  return Buffer.concat([
+    decipher.update(Buffer.from(encodedValue, 'base64url')),
+    decipher.final(),
+  ]).toString('utf8');
 };

@@ -20,6 +20,7 @@ const providers = [
     mode: 'OAUTH',
     configurationReady: isAniListOAuthConfigured,
     connectorImplemented: true,
+    syncImplemented: true,
   },
   {
     key: 'trakt',
@@ -29,6 +30,7 @@ const providers = [
     mode: 'OAUTH',
     configurationReady: isTraktOAuthConfigured,
     connectorImplemented: true,
+    syncImplemented: true,
   },
   {
     key: 'google-books',
@@ -38,16 +40,7 @@ const providers = [
     mode: 'OAUTH',
     configurationReady: isGoogleBooksOAuthConfigured,
     connectorImplemented: true,
-  },
-  {
-    key: 'mangadex',
-    name: 'MangaDex',
-    media: ['MANGA'],
-    description: 'Import followed manga when MediaHub API-client access is configured.',
-    mode: 'OAUTH',
-    configurationReady: () =>
-      Boolean(process.env.MANGADEX_CLIENT_ID && process.env.MANGADEX_CLIENT_SECRET),
-    connectorImplemented: false,
+    syncImplemented: true,
   },
 ] as const;
 
@@ -56,28 +49,31 @@ export const listConnections = async (userId: string) => {
   const savedBySource = new Map(savedConnections.map((item) => [item.source.key, item]));
 
   return {
-    data: providers.map(({ configurationReady, connectorImplemented, ...provider }) => {
-      const connection = savedBySource.get(provider.key) ?? null;
-      const configured = configurationReady();
-      return {
-        ...provider,
-        configured,
-        connectAvailable: connectorImplemented && configured,
-        connection: connection
-          ? {
-              id: connection.id,
-              externalUserId: connection.externalUserId,
-              externalUsername: connection.externalUsername,
-              status: connection.status,
-              tokenExpiresAt: connection.tokenExpiresAt,
-              lastSyncedAt: connection.lastSyncedAt,
-              lastError: connection.lastError,
-              createdAt: connection.createdAt,
-              updatedAt: connection.updatedAt,
-            }
-          : null,
-      };
-    }),
+    data: providers.map(
+      ({ configurationReady, connectorImplemented, syncImplemented, ...provider }) => {
+        const connection = savedBySource.get(provider.key) ?? null;
+        const configured = configurationReady();
+        return {
+          ...provider,
+          configured,
+          connectAvailable: connectorImplemented && configured,
+          syncAvailable: syncImplemented && Boolean(connection),
+          connection: connection
+            ? {
+                id: connection.id,
+                externalUserId: connection.externalUserId,
+                externalUsername: connection.externalUsername,
+                status: connection.status,
+                tokenExpiresAt: connection.tokenExpiresAt,
+                lastSyncedAt: connection.lastSyncedAt,
+                lastError: connection.lastError,
+                createdAt: connection.createdAt,
+                updatedAt: connection.updatedAt,
+              }
+            : null,
+        };
+      },
+    ),
   };
 };
 

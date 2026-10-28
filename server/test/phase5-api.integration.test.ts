@@ -182,14 +182,31 @@ test('MediaHub API security and core workflow', async (t) => {
 
     const connections = await api('/connections');
     assert.equal(connections.response.status, 200);
-    const connectionProviders = connections.body.data as Array<{ key: string }>;
+    const connectionProviders = connections.body.data as Array<{ key: string; mode: string }>;
     assert.deepEqual(
       connectionProviders.map(({ key }) => key),
-      ['anilist', 'trakt', 'google-books', 'mangadex'],
+      ['anilist', 'trakt', 'google-books'],
     );
     const serializedConnections = JSON.stringify(connections.body);
     assert.equal(serializedConnections.includes('accessTokenEncrypted'), false);
     assert.equal(serializedConnections.includes('refreshTokenEncrypted'), false);
+
+    const missingAniListSync = await api('/connections/anilist/sync', { method: 'POST' });
+    assert.equal(missingAniListSync.response.status, 404);
+    const missingSyncError = missingAniListSync.body.error as { code: string };
+    assert.equal(missingSyncError.code, 'USER_CONNECTION_NOT_FOUND');
+
+    const missingTraktSync = await api('/connections/trakt/sync', { method: 'POST' });
+    assert.equal(missingTraktSync.response.status, 404);
+    const missingTraktSyncError = missingTraktSync.body.error as { code: string };
+    assert.equal(missingTraktSyncError.code, 'USER_CONNECTION_NOT_FOUND');
+
+    const missingGoogleBooksSync = await api('/connections/google-books/sync', {
+      method: 'POST',
+    });
+    assert.equal(missingGoogleBooksSync.response.status, 404);
+    const missingGoogleBooksSyncError = missingGoogleBooksSync.body.error as { code: string };
+    assert.equal(missingGoogleBooksSyncError.code, 'USER_CONNECTION_NOT_FOUND');
 
     const aniListConnect = await nativeFetch(`${baseUrl}/connections/anilist/connect`, {
       headers: { Cookie: getSessionCookie(testSessionId) },

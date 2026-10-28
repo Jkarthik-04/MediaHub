@@ -4,6 +4,11 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { clientOrigin } from '../config/security.js';
 import { AppError } from '../errors/app-error.js';
 import {
+  syncAniListLibrary,
+  syncGoogleBooksLibrary,
+  syncTraktLibrary,
+} from '../services/connected-sync.service.js';
+import {
   connectAniListAccount,
   connectGoogleBooksAccount,
   connectTraktAccount,
@@ -21,6 +26,18 @@ export const showConnections: RequestHandler = async (_request, response) => {
 export const removeConnection: RequestHandler = async (request, response) => {
   await disconnectProvider(response.locals.userId as string, request.params.sourceKey as string);
   response.status(204).end();
+};
+
+export const syncAniListConnection: RequestHandler = async (_request, response) => {
+  response.json(await syncAniListLibrary(response.locals.userId as string));
+};
+
+export const syncTraktConnection: RequestHandler = async (_request, response) => {
+  response.json(await syncTraktLibrary(response.locals.userId as string));
+};
+
+export const syncGoogleBooksConnection: RequestHandler = async (_request, response) => {
+  response.json(await syncGoogleBooksLibrary(response.locals.userId as string));
 };
 
 export const startAniListConnection: RequestHandler = (request, response) => {

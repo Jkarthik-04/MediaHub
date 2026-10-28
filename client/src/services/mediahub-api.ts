@@ -339,13 +339,14 @@ export function addLibraryEntry(mediaItemId: string, status: LibraryStatus = 'PL
 }
 
 export type ConnectionProvider = {
-  key: 'anilist' | 'trakt' | 'google-books' | 'mangadex';
+  key: 'anilist' | 'trakt' | 'google-books';
   name: string;
   media: MediaTypeCode[];
   description: string;
   mode: 'OAUTH';
   configured: boolean;
   connectAvailable: boolean;
+  syncAvailable: boolean;
   connection: null | {
     id: string;
     externalUserId: string;
@@ -367,3 +368,16 @@ export const disconnectProvider = (sourceKey: ConnectionProvider['key']) =>
 
 export const getProviderConnectUrl = (sourceKey: ConnectionProvider['key']) =>
   `/api/v1/connections/${encodeURIComponent(sourceKey)}/connect`;
+
+export type ConnectionSyncSummary = {
+  provider: ConnectionProvider['key'];
+  imported: number;
+  updated: number;
+  total: number;
+};
+
+export const syncConnection = (sourceKey: ConnectionProvider['key']) =>
+  apiClient<ApiEnvelope<ConnectionSyncSummary>>(
+    `/connections/${encodeURIComponent(sourceKey)}/sync`,
+    { method: 'POST' },
+  );
