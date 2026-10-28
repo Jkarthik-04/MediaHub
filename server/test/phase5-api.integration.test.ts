@@ -20,6 +20,7 @@ const adminUserId = '00000000-0000-4000-8000-000000000001';
 const adminSessionId = 'phase6-admin-session';
 const expiredSessionId = 'phase6-expired-session';
 const interstellarId = '10000000-0000-4000-8000-000000000001';
+const duneId = '10000000-0000-4000-8000-000000000005';
 const nativeFetch = globalThis.fetch;
 const server = createApp().listen(0);
 const address = server.address() as AddressInfo;
@@ -316,6 +317,93 @@ test('MediaHub API security and core workflow', async (t) => {
     assert.equal(data[0]?.externalId, 'OLTESTW');
     assert.deepEqual(data[0]?.genres, ['Science Fiction']);
     assert.equal(data[0]?.totalUnits, 320);
+  });
+
+  await t.test('prevents duplicate imports for the same user and media type', async () => {
+    const duneImport = {
+      provider: 'open-library',
+      externalId: 'OL-DUPLICATE-DUNE',
+      mediaType: 'BOOK',
+      title: 'Dune',
+      alternateTitles: [],
+      genres: ['Science Fiction'],
+      sourceUrl: 'https://openlibrary.org/works/OL-DUPLICATE-DUNE',
+    };
+    const initialPreview = await api('/imports/preview', {
+      method: 'POST',
+      body: JSON.stringify({ items: [duneImport], defaultLibraryStatus: 'PLANNED' }),
+    });
+    assert.equal(initialPreview.response.status, 201);
+    const initialData = initialPreview.body.data as {
+      id: string;
+      candidates: Array<{ id: string; match: { id: string } | null }>;
+    };
+    assert.equal(initialData.candidates[0]?.match?.id, duneId);
+
+    const addedDune = await api('/library', {
+      method: 'POST',
+      body: JSON.stringify({ mediaItemId: duneId, status: 'PLANNED' }),
+    });
+    assert.equal(addedDune.response.status, 201);
+    const duneEntry = addedDune.body.data as { id: string };
+
+    const staleConfirmation = await api(`/imports/${initialData.id}/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({
+        decisions: [
+          {
+            candidateId: initialData.candidates[0]?.id,
+            action: 'REUSE',
+            mediaItemId: duneId,
+          },
+        ],
+      }),
+    });
+    assert.equal(staleConfirmation.response.status, 409);
+    const staleConfirmationError = staleConfirmation.body.error as {
+      code: string;
+      message: string;
+    };
+    assert.equal(staleConfirmationError.code, 'LIBRARY_ENTRY_EXISTS');
+    assert.equal(staleConfirmationError.message, 'This title already exists in your list.');
+
+    const duplicatePreview = await api('/imports/preview', {
+      method: 'POST',
+      body: JSON.stringify({
+        items: [{ ...duneImport, externalId: 'OL-DUPLICATE-DUNE-SECOND' }],
+        defaultLibraryStatus: 'PLANNED',
+      }),
+    });
+    assert.equal(duplicatePreview.response.status, 409);
+    const duplicatePreviewError = duplicatePreview.body.error as { code: string; message: string };
+    assert.equal(duplicatePreviewError.code, 'LIBRARY_ENTRY_EXISTS');
+    assert.equal(duplicatePreviewError.message, 'This title already exists in your list.');
+
+    const differentType = await api('/imports/preview', {
+      method: 'POST',
+      body: JSON.stringify({
+        items: [
+          {
+            provider: 'jikan',
+            externalId: 'DUPLICATE-TITLE-DIFFERENT-TYPE',
+            mediaType: 'ANIME',
+            title: 'Dune',
+            alternateTitles: [],
+            genres: [],
+            sourceUrl: 'https://myanimelist.net/anime/999999/Dune',
+          },
+        ],
+        defaultLibraryStatus: 'PLANNED',
+      }),
+    });
+    assert.equal(differentType.response.status, 201);
+    const differentTypeData = differentType.body.data as {
+      candidates: Array<{ proposedAction: string }>;
+    };
+    assert.equal(differentTypeData.candidates[0]?.proposedAction, 'CREATE');
+
+    const removedDune = await api(`/library/${duneEntry.id}`, { method: 'DELETE' });
+    assert.equal(removedDune.response.status, 204);
   });
 
   await t.test('previews and skips a staged import', async () => {

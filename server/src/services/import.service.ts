@@ -5,6 +5,7 @@ import {
   confirmImport,
   createPreviewJob,
   findExternalMatch,
+  findLibraryEntryByUserAndMedia,
   findMediaTypeMap,
   findOwnedImportJob,
   findSourceMap,
@@ -64,8 +65,9 @@ export const previewImport = async (userId: string, body: ImportPreviewBody) => 
       throw new AppError(400, 'INVALID_MEDIA_TYPE', `${media.mediaType} is unavailable.`);
     }
 
-    const externalMatch = await findExternalMatch(sourceId, media.externalId);
+    const externalMatch = await findExternalMatch(sourceId, media.externalId, mediaTypeId);
     if (externalMatch) {
+      await assertNotAlreadyInLibrary(userId, externalMatch.mediaItemId);
       candidates.push({
         sourceId,
         mediaTypeId,
@@ -79,6 +81,7 @@ export const previewImport = async (userId: string, body: ImportPreviewBody) => 
     }
 
     const titleMatch = await findTitleMatch(mediaTypeId, normalizeTitle(media.title));
+    if (titleMatch) await assertNotAlreadyInLibrary(userId, titleMatch.id);
     candidates.push({
       sourceId,
       mediaTypeId,
@@ -190,6 +193,13 @@ const assertUniqueProviderItems = (items: ProviderMediaInput[]) => {
   const keys = items.map((item) => `${item.provider}:${item.externalId}`);
   if (new Set(keys).size !== keys.length) {
     throw new AppError(400, 'DUPLICATE_PROVIDER_ITEM', 'The preview contains duplicate items.');
+  }
+};
+
+const assertNotAlreadyInLibrary = async (userId: string, mediaItemId: string) => {
+  const existingEntry = await findLibraryEntryByUserAndMedia(userId, mediaItemId);
+  if (existingEntry) {
+    throw new AppError(409, 'LIBRARY_ENTRY_EXISTS', 'This title already exists in your list.');
   }
 };
 

@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { EmptyState } from '../components/PageStates';
 import { PageHeader } from '../components/PageHeader';
 import { Pagination } from '../components/Pagination';
+import { ApiError } from '../services/api-client';
 import {
   addLibraryEntry,
   confirmImport,
@@ -189,7 +190,7 @@ export function DiscoveryPage() {
   async function handleAddCatalogueItem(item: MediaCatalogueItem) {
     if (libraryMediaIds.has(item.id)) {
       setActionError('');
-      setMessage(`${item.title} is already in your library.`);
+      setMessage('This title already exists in your list.');
       return;
     }
     setBusyId(item.id);
@@ -205,9 +206,9 @@ export function DiscoveryPage() {
     } catch (caughtError) {
       const errorMessage =
         caughtError instanceof Error ? caughtError.message : 'Unable to add title.';
-      if (errorMessage.toLowerCase().includes('already in your library')) {
+      if (caughtError instanceof ApiError && caughtError.code === 'LIBRARY_ENTRY_EXISTS') {
         setLibraryMediaIds((current) => new Set(current).add(item.id));
-        setMessage(`${item.title} is already in your library.`);
+        setMessage('This title already exists in your list.');
       } else {
         setActionError(errorMessage);
       }
@@ -228,9 +229,14 @@ export function DiscoveryPage() {
       setPendingImport({ jobId: preview.data.id, item, candidate });
       setMessage('Review the import match and choose how to continue.');
     } catch (caughtError) {
-      setActionError(
-        caughtError instanceof Error ? caughtError.message : 'Unable to import title.',
-      );
+      if (caughtError instanceof ApiError && caughtError.code === 'LIBRARY_ENTRY_EXISTS') {
+        setPendingImport(null);
+        setMessage('This title already exists in your list.');
+      } else {
+        setActionError(
+          caughtError instanceof Error ? caughtError.message : 'Unable to import title.',
+        );
+      }
     } finally {
       setBusyId(null);
     }
@@ -246,7 +252,8 @@ export function DiscoveryPage() {
     }
     // candidate.match.id is the internal MediaHub ID; provider and candidate IDs are external/staging IDs.
     if (action === 'REUSE' && match && libraryMediaIds.has(match.id)) {
-      setActionError(`${match.title} is already in your library.`);
+      setPendingImport(null);
+      setMessage('This title already exists in your list.');
       return;
     }
     setBusyId(item.externalId);
@@ -267,9 +274,15 @@ export function DiscoveryPage() {
       );
       setSearchVersion((version) => version + 1);
     } catch (caughtError) {
-      setActionError(
-        caughtError instanceof Error ? caughtError.message : 'Unable to confirm import.',
-      );
+      if (caughtError instanceof ApiError && caughtError.code === 'LIBRARY_ENTRY_EXISTS') {
+        setPendingImport(null);
+        setMessage('This title already exists in your list.');
+        setSearchVersion((version) => version + 1);
+      } else {
+        setActionError(
+          caughtError instanceof Error ? caughtError.message : 'Unable to confirm import.',
+        );
+      }
     } finally {
       setBusyId(null);
     }
@@ -412,10 +425,15 @@ export function DiscoveryPage() {
               View provider source
             </a>
           </p>
-          <p>
-            Proposed action:{' '}
-            {pendingImport.candidate.proposedAction.replaceAll('_', ' ').toLowerCase()}.
-          </p>
+          {pendingImport.candidate.match &&
+          libraryMediaIds.has(pendingImport.candidate.match.id) ? (
+            <p role="status">This title already exists in your list.</p>
+          ) : (
+            <p>
+              Proposed action:{' '}
+              {pendingImport.candidate.proposedAction.replaceAll('_', ' ').toLowerCase()}.
+            </p>
+          )}
           {pendingImport.candidate.match ? (
             <p>
               Possible MediaHub match: <strong>{pendingImport.candidate.match.title}</strong>
@@ -426,34 +444,38 @@ export function DiscoveryPage() {
           ) : (
             <p>No existing MediaHub match was found.</p>
           )}
-          <div className="inline-actions">
-            {pendingImport.candidate.match && (
+          {!(
+            pendingImport.candidate.match && libraryMediaIds.has(pendingImport.candidate.match.id)
+          ) && (
+            <div className="inline-actions">
+              {pendingImport.candidate.match && (
+                <button
+                  className="button button-primary"
+                  disabled={busyId !== null}
+                  onClick={() => void confirmPendingImport('REUSE')}
+                  type="button"
+                >
+                  Reuse existing title
+                </button>
+              )}
               <button
-                className="button button-primary"
-                disabled={busyId !== null || libraryMediaIds.has(pendingImport.candidate.match.id)}
-                onClick={() => void confirmPendingImport('REUSE')}
+                className="tab"
+                disabled={busyId !== null}
+                onClick={() => void confirmPendingImport('CREATE')}
                 type="button"
               >
-                Reuse existing title
+                Create new title
               </button>
-            )}
-            <button
-              className="tab"
-              disabled={busyId !== null}
-              onClick={() => void confirmPendingImport('CREATE')}
-              type="button"
-            >
-              Create new title
-            </button>
-            <button
-              className="tab"
-              disabled={busyId !== null}
-              onClick={() => void confirmPendingImport('SKIP')}
-              type="button"
-            >
-              Skip
-            </button>
-          </div>
+              <button
+                className="tab"
+                disabled={busyId !== null}
+                onClick={() => void confirmPendingImport('SKIP')}
+                type="button"
+              >
+                Skip
+              </button>
+            </div>
+          )}
         </section>
       )}
 
