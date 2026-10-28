@@ -16,6 +16,7 @@ const libraryEntrySelect = {
     select: {
       id: true,
       title: true,
+      normalizedTitle: true,
       coverUrl: true,
       totalUnits: true,
       mediaType: {
@@ -29,6 +30,12 @@ const libraryEntrySelect = {
       genres: {
         select: {
           genre: { select: { name: true, slug: true } },
+        },
+      },
+      externalMappings: {
+        select: {
+          externalId: true,
+          source: { select: { key: true } },
         },
       },
       units: {

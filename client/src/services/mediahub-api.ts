@@ -83,6 +83,7 @@ export type LibraryEntry = {
   mediaItem: {
     id: string;
     title: string;
+    normalizedTitle: string;
     coverUrl: string | null;
     totalUnits: number | null;
     mediaType: {
@@ -94,6 +95,10 @@ export type LibraryEntry = {
     genres: Array<{
       name: string;
       slug: string;
+    }>;
+    externalMappings: Array<{
+      externalId: string;
+      source: { key: string };
     }>;
     units: Array<{
       id: string;

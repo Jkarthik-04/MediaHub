@@ -20,6 +20,9 @@ const adminUserId = '00000000-0000-4000-8000-000000000001';
 const adminSessionId = 'phase6-admin-session';
 const expiredSessionId = 'phase6-expired-session';
 const interstellarId = '10000000-0000-4000-8000-000000000001';
+const breakingBadId = '10000000-0000-4000-8000-000000000002';
+const attackOnTitanId = '10000000-0000-4000-8000-000000000003';
+const onePieceId = '10000000-0000-4000-8000-000000000004';
 const duneId = '10000000-0000-4000-8000-000000000005';
 const nativeFetch = globalThis.fetch;
 const server = createApp().listen(0);
@@ -405,6 +408,40 @@ test('MediaHub API security and core workflow', async (t) => {
     const removedDune = await api(`/library/${duneEntry.id}`, { method: 'DELETE' });
     assert.equal(removedDune.response.status, 204);
   });
+
+  await t.test(
+    'prevents direct duplicate library additions for every supported media type',
+    async () => {
+      const mediaByType = [
+        { type: 'MOVIE', mediaItemId: interstellarId },
+        { type: 'TV', mediaItemId: breakingBadId },
+        { type: 'ANIME', mediaItemId: attackOnTitanId },
+        { type: 'BOOK', mediaItemId: duneId },
+        { type: 'MANGA', mediaItemId: onePieceId },
+      ];
+      const createdEntryIds: string[] = [];
+
+      try {
+        for (const { type, mediaItemId } of mediaByType) {
+          const created = await api('/library', {
+            method: 'POST',
+            body: JSON.stringify({ mediaItemId, status: 'PLANNED' }),
+          });
+          assert.equal(created.response.status, 201, `${type} should allow a new library entry`);
+          createdEntryIds.push((created.body.data as { id: string }).id);
+
+          const duplicate = await api('/library', {
+            method: 'POST',
+            body: JSON.stringify({ mediaItemId, status: 'PLANNED' }),
+          });
+          assert.equal(duplicate.response.status, 409, `${type} should reject a duplicate entry`);
+          assert.equal((duplicate.body.error as { code: string }).code, 'LIBRARY_ENTRY_EXISTS');
+        }
+      } finally {
+        await Promise.all(createdEntryIds.map((id) => api(`/library/${id}`, { method: 'DELETE' })));
+      }
+    },
+  );
 
   await t.test('previews and skips a staged import', async () => {
     const preview = await api('/imports/preview', {

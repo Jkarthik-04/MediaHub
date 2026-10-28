@@ -4,6 +4,7 @@ import { EmptyState } from '../components/PageStates';
 import { PageHeader } from '../components/PageHeader';
 import { Pagination } from '../components/Pagination';
 import { ApiError } from '../services/api-client';
+import { isCatalogueItemInLibrary, isProviderItemInLibrary } from '../utils/discovery-duplicates';
 import {
   addLibraryEntry,
   confirmImport,
@@ -14,6 +15,7 @@ import {
   submitManualMedia,
   type DiscoveryMedia,
   type ImportJob,
+  type LibraryEntry,
   type LibraryStatus,
   type MediaCatalogueItem,
   type MediaTypeCode,
@@ -39,6 +41,7 @@ export function DiscoveryPage() {
   const [message, setMessage] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [libraryMediaIds, setLibraryMediaIds] = useState<Set<string>>(() => new Set());
+  const [libraryEntries, setLibraryEntries] = useState<LibraryEntry[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(true);
   const [libraryCheckError, setLibraryCheckError] = useState('');
   const [searchVersion, setSearchVersion] = useState(0);
@@ -73,6 +76,7 @@ export function DiscoveryPage() {
         }
         if (!cancelled) {
           setLibraryMediaIds(new Set(entries.map((entry) => entry.mediaItem.id)));
+          setLibraryEntries(entries);
         }
       } catch {
         if (!cancelled) {
@@ -232,6 +236,7 @@ export function DiscoveryPage() {
       if (caughtError instanceof ApiError && caughtError.code === 'LIBRARY_ENTRY_EXISTS') {
         setPendingImport(null);
         setMessage('This title already exists in your list.');
+        setSearchVersion((version) => version + 1);
       } else {
         setActionError(
           caughtError instanceof Error ? caughtError.message : 'Unable to import title.',
@@ -499,8 +504,11 @@ export function DiscoveryPage() {
               const item = result.item;
               const isCatalogueItem = result.kind === 'catalogue';
               const itemId = result.kind === 'catalogue' ? result.item.id : result.item.externalId;
-              const alreadyInLibrary =
-                result.kind === 'catalogue' && libraryMediaIds.has(result.item.id);
+              const isProviderItem = result.kind === 'provider';
+              const alreadyInLibrary = isCatalogueItem
+                ? isCatalogueItemInLibrary(result.item.id, libraryMediaIds)
+                : isProviderItemInLibrary(result.item, libraryEntries);
+              const isCheckingLibrary = (isCatalogueItem || isProviderItem) && libraryLoading;
               const genres =
                 result.kind === 'catalogue'
                   ? result.item.genres.map((genre) => genre.name)
@@ -566,10 +574,7 @@ export function DiscoveryPage() {
                       <button
                         className="button button-primary"
                         type="button"
-                        disabled={
-                          (isCatalogueItem && (libraryLoading || alreadyInLibrary)) ||
-                          busyId === itemId
-                        }
+                        disabled={isCheckingLibrary || alreadyInLibrary || busyId === itemId}
                         onClick={() => {
                           if (result.kind === 'catalogue') {
                             void handleAddCatalogueItem(result.item);
@@ -582,7 +587,7 @@ export function DiscoveryPage() {
                           ? isCatalogueItem
                             ? 'Adding…'
                             : 'Importing…'
-                          : isCatalogueItem && libraryLoading
+                          : isCheckingLibrary
                             ? 'Checking library…'
                             : alreadyInLibrary
                               ? 'Already in Library'
