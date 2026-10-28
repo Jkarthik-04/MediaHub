@@ -1,7 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { useAuth } from '../auth/useAuth';
-import { useNotifications } from './useNotifications';
+import { ProfileMenu } from './ProfileMenu';
 
 const navigation = [
   { to: '/', label: 'Dashboard', end: true },
@@ -9,22 +9,12 @@ const navigation = [
   { to: '/reading', label: 'Reading' },
   { to: '/watching', label: 'Watching' },
   { to: '/recommendations', label: 'Recommendations' },
-  { to: '/connections', label: 'Connections' },
 ];
 
 export function AppShell() {
   const { user, signOut } = useAuth();
-  const { notify } = useNotifications();
   const visibleNavigation =
     user?.role === 'ADMIN' ? [...navigation, { to: '/admin', label: 'Admin' }] : navigation;
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch {
-      notify('Unable to sign out. Please try again.', 'error');
-    }
-  };
 
   return (
     <div className="app-shell">
@@ -51,18 +41,7 @@ export function AppShell() {
               </NavLink>
             ))}
           </nav>
-          <div className="account-controls">
-            <span className="account-name" title={user?.email}>
-              {user?.displayName}
-            </span>
-            <button
-              className="button button-secondary button-compact"
-              onClick={handleSignOut}
-              type="button"
-            >
-              Sign out
-            </button>
-          </div>
+          {user && <ProfileMenu user={user} onSignOut={signOut} />}
         </div>
       </header>
       <main className="page-content" id="main-content">
