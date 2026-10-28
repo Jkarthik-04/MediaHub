@@ -5,6 +5,7 @@ import {
   disconnectProvider,
   getConnectionProviders,
   getProviderConnectUrl,
+  syncConnection,
   type ConnectionProvider,
 } from '../services/mediahub-api';
 
@@ -14,6 +15,8 @@ export function ConnectionsPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [disconnecting, setDisconnecting] = useState<ConnectionProvider['key'] | null>(null);
+  const [syncing, setSyncing] = useState<ConnectionProvider['key'] | null>(null);
+  const [failedLogos, setFailedLogos] = useState<ConnectionProvider['key'][]>([]);
 
   const loadProviders = async () => {
     setLoading(true);
@@ -30,11 +33,45 @@ export function ConnectionsPage() {
 
   useEffect(() => {
     const result = new URLSearchParams(window.location.search).get('connection');
-    if (result === 'anilist-success') {
-      setMessage('AniList was connected successfully.');
+    const connectedProvider =
+      result === 'anilist-success'
+        ? { key: 'anilist' as const, name: 'AniList' }
+        : result === 'trakt-success'
+          ? { key: 'trakt' as const, name: 'Trakt' }
+          : result === 'google-books-success'
+            ? { key: 'google-books' as const, name: 'Google Books' }
+            : null;
+    if (connectedProvider) {
+      setMessage(`${connectedProvider.name} was connected. Importing your library…`);
       window.history.replaceState({}, '', window.location.pathname);
     }
-    void loadProviders();
+
+    const initializeConnections = async () => {
+      await loadProviders();
+      if (!connectedProvider) return;
+
+      setSyncing(connectedProvider.key);
+      setError('');
+      try {
+        const response = await syncConnection(connectedProvider.key);
+        setMessage(
+          `${connectedProvider.name} was connected and synced: ${response.data.imported} added and ${response.data.updated} updated.`,
+        );
+        await loadProviders();
+      } catch (caughtError) {
+        setMessage(`${connectedProvider.name} was connected, but its first sync did not finish.`);
+        setError(
+          caughtError instanceof Error ? caughtError.message : 'Use Sync now to retry the import.',
+        );
+      } finally {
+        setSyncing(null);
+      }
+    };
+    void initializeConnections();
+
+    const refreshConnections = () => void loadProviders();
+    window.addEventListener('focus', refreshConnections);
+    return () => window.removeEventListener('focus', refreshConnections);
   }, []);
 
   const handleDisconnect = async (provider: ConnectionProvider) => {
@@ -51,6 +88,23 @@ export function ConnectionsPage() {
       );
     } finally {
       setDisconnecting(null);
+    }
+  };
+
+  const handleSync = async (provider: ConnectionProvider) => {
+    setSyncing(provider.key);
+    setError('');
+    setMessage('');
+    try {
+      const response = await syncConnection(provider.key);
+      setMessage(
+        `${provider.name} sync complete: ${response.data.imported} added and ${response.data.updated} updated.`,
+      );
+      await loadProviders();
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : 'Unable to sync account.');
+    } finally {
+      setSyncing(null);
     }
   };
 
@@ -88,10 +142,29 @@ export function ConnectionsPage() {
         <section className="metric-grid" aria-label="Supported website connections">
           {providers.map((provider) => {
             const connection = provider.connection;
+            const logoFailed = failedLogos.includes(provider.key);
             return (
               <article className="surface" key={provider.key}>
                 <p className="eyebrow">{provider.media.join(' · ')}</p>
-                <h2>{provider.name}</h2>
+                <div className="provider-card-heading">
+                  {logoFailed ? (
+                    <span className="provider-logo-fallback" aria-hidden="true">
+                      {provider.name.slice(0, 1)}
+                    </span>
+                  ) : (
+                    <img
+                      className="provider-logo"
+                      src={provider.logoUrl}
+                      alt={`${provider.name} logo`}
+                      onError={() =>
+                        setFailedLogos((current) =>
+                          current.includes(provider.key) ? current : [...current, provider.key],
+                        )
+                      }
+                    />
+                  )}
+                  <h2>{provider.name}</h2>
+                </div>
                 <p>{provider.description}</p>
                 {connection ? (
                   <>
@@ -105,6 +178,16 @@ export function ConnectionsPage() {
                         ? new Date(connection.lastSyncedAt).toLocaleString()
                         : 'Not synced yet'}
                     </p>
+                    {provider.syncAvailable && (
+                      <button
+                        className="button button-primary"
+                        type="button"
+                        disabled={syncing === provider.key}
+                        onClick={() => void handleSync(provider)}
+                      >
+                        {syncing === provider.key ? 'Syncing…' : 'Sync now'}
+                      </button>
+                    )}
                     <button
                       className="button button-secondary"
                       type="button"
@@ -118,7 +201,7 @@ export function ConnectionsPage() {
                   <>
                     <p className="muted">
                       {provider.configured
-                        ? 'OAuth connector implementation is the next checkpoint.'
+                        ? 'Ready to connect securely with OAuth.'
                         : 'Provider credentials have not been configured.'}
                     </p>
                     <button

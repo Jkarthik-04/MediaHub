@@ -28,6 +28,61 @@ export const deleteUserConnection = async (userId: string, sourceKey: string) =>
   return result.count > 0;
 };
 
+export const findUserConnectionForSync = (userId: string, sourceKey: string) =>
+  prisma.userConnection.findFirst({
+    where: { userId, source: { key: sourceKey } },
+    select: {
+      id: true,
+      externalUserId: true,
+      accessTokenEncrypted: true,
+      refreshTokenEncrypted: true,
+      tokenExpiresAt: true,
+      status: true,
+      source: { select: { id: true, key: true } },
+    },
+  });
+
+export const updateConnectionAccessToken = (
+  connectionId: string,
+  accessTokenEncrypted: string,
+  tokenExpiresAt: Date | null,
+) =>
+  prisma.userConnection.update({
+    where: { id: connectionId },
+    data: {
+      accessTokenEncrypted,
+      tokenExpiresAt,
+      status: 'CONNECTED',
+      lastError: null,
+    },
+  });
+
+export const markConnectionSyncCompleted = (
+  connectionId: string,
+  summary: { imported: number; updated: number; total: number },
+) =>
+  prisma.userConnection.update({
+    where: { id: connectionId },
+    data: {
+      status: 'CONNECTED',
+      lastSyncedAt: new Date(),
+      lastError: null,
+      syncCursor: summary,
+    },
+  });
+
+export const markConnectionSyncFailed = (connectionId: string, message: string) =>
+  prisma.userConnection.update({
+    where: { id: connectionId },
+    data: { status: 'ERROR', lastError: message.slice(0, 2_000) },
+  });
+
+export const markConnectionExpired = (connectionId: string) =>
+  prisma.userConnection.update({
+    where: { id: connectionId },
+    data: { status: 'EXPIRED', lastError: 'The provider access token has expired.' },
+  });
+
 type SaveUserConnectionInput = {
   userId: string;
   sourceKey: string;

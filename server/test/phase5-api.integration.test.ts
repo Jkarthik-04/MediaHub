@@ -7,7 +7,9 @@ import { createApp } from '../src/app.js';
 import {
   getSessionSecret,
   isAniListOAuthConfigured,
+  isGoogleBooksOAuthConfigured,
   isGoogleOAuthConfigured,
+  isTraktOAuthConfigured,
   sessionCookieName,
   sessionMaxAgeMilliseconds,
 } from '../src/config/security.js';
@@ -184,14 +186,31 @@ test('MediaHub API security and core workflow', async (t) => {
 
     const connections = await api('/connections');
     assert.equal(connections.response.status, 200);
-    const connectionProviders = connections.body.data as Array<{ key: string }>;
+    const connectionProviders = connections.body.data as Array<{ key: string; mode: string }>;
     assert.deepEqual(
       connectionProviders.map(({ key }) => key),
-      ['anilist', 'trakt', 'google-books', 'mangadex'],
+      ['anilist', 'trakt', 'google-books'],
     );
     const serializedConnections = JSON.stringify(connections.body);
     assert.equal(serializedConnections.includes('accessTokenEncrypted'), false);
     assert.equal(serializedConnections.includes('refreshTokenEncrypted'), false);
+
+    const missingAniListSync = await api('/connections/anilist/sync', { method: 'POST' });
+    assert.equal(missingAniListSync.response.status, 404);
+    const missingSyncError = missingAniListSync.body.error as { code: string };
+    assert.equal(missingSyncError.code, 'USER_CONNECTION_NOT_FOUND');
+
+    const missingTraktSync = await api('/connections/trakt/sync', { method: 'POST' });
+    assert.equal(missingTraktSync.response.status, 404);
+    const missingTraktSyncError = missingTraktSync.body.error as { code: string };
+    assert.equal(missingTraktSyncError.code, 'USER_CONNECTION_NOT_FOUND');
+
+    const missingGoogleBooksSync = await api('/connections/google-books/sync', {
+      method: 'POST',
+    });
+    assert.equal(missingGoogleBooksSync.response.status, 404);
+    const missingGoogleBooksSyncError = missingGoogleBooksSync.body.error as { code: string };
+    assert.equal(missingGoogleBooksSyncError.code, 'USER_CONNECTION_NOT_FOUND');
 
     const aniListConnect = await nativeFetch(`${baseUrl}/connections/anilist/connect`, {
       headers: { Cookie: getSessionCookie(testSessionId) },
@@ -203,6 +222,38 @@ test('MediaHub API security and core workflow', async (t) => {
     } else {
       assert.equal(aniListConnect.status, 503);
       const connectionError = (await aniListConnect.json()) as { error: { code: string } };
+      assert.equal(connectionError.error.code, 'CONNECTION_NOT_CONFIGURED');
+    }
+
+    const traktConnect = await nativeFetch(`${baseUrl}/connections/trakt/connect`, {
+      headers: { Cookie: getSessionCookie(testSessionId) },
+      redirect: 'manual',
+    });
+    if (isTraktOAuthConfigured()) {
+      assert.equal(traktConnect.status, 302);
+      const location = new URL(traktConnect.headers.get('location') ?? '');
+      assert.equal(location.origin, 'https://trakt.tv');
+      assert.equal(location.searchParams.get('code_challenge_method'), 'S256');
+      assert.ok(location.searchParams.get('code_challenge'));
+    } else {
+      assert.equal(traktConnect.status, 503);
+      const connectionError = (await traktConnect.json()) as { error: { code: string } };
+      assert.equal(connectionError.error.code, 'CONNECTION_NOT_CONFIGURED');
+    }
+
+    const googleBooksConnect = await nativeFetch(`${baseUrl}/connections/google-books/connect`, {
+      headers: { Cookie: getSessionCookie(testSessionId) },
+      redirect: 'manual',
+    });
+    if (isGoogleBooksOAuthConfigured()) {
+      assert.equal(googleBooksConnect.status, 302);
+      const location = new URL(googleBooksConnect.headers.get('location') ?? '');
+      assert.equal(location.origin, 'https://accounts.google.com');
+      assert.equal(location.searchParams.get('code_challenge_method'), 'S256');
+      assert.match(location.searchParams.get('scope') ?? '', /googleapis\.com\/auth\/books/);
+    } else {
+      assert.equal(googleBooksConnect.status, 503);
+      const connectionError = (await googleBooksConnect.json()) as { error: { code: string } };
       assert.equal(connectionError.error.code, 'CONNECTION_NOT_CONFIGURED');
     }
 
