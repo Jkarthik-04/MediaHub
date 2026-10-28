@@ -343,12 +343,6 @@ export function DiscoveryPage() {
         through external providers, then import them into the correct library.
       </PageHeader>
 
-      <RecommendationSection
-        libraryMediaIds={libraryMediaIds}
-        libraryLoading={libraryLoading}
-        onLibraryChanged={() => setSearchVersion((version) => version + 1)}
-      />
-
       <section className="surface">
         <form onSubmit={handleSearch}>
           <label htmlFor="discovery-query">Search titles</label>
@@ -398,6 +392,12 @@ export function DiscoveryPage() {
           </div>
         </form>
       </section>
+
+      <RecommendationSection
+        libraryMediaIds={libraryMediaIds}
+        libraryLoading={libraryLoading}
+        onLibraryChanged={() => setSearchVersion((version) => version + 1)}
+      />
 
       {libraryCheckError && (
         <div className="surface" role="status">

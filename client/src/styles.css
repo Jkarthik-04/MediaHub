@@ -500,12 +500,21 @@ button:disabled {
 }
 
 .recommendation-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  display: flex;
   gap: 18px;
+  overflow-x: auto;
+  padding: 2px 2px 12px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.recommendation-grid::-webkit-scrollbar {
+  display: none;
 }
 
 .recommendation-card {
+  flex: 0 0 min(360px, calc(100vw - 5rem));
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
   gap: 16px;
@@ -513,6 +522,7 @@ button:disabled {
   border: 1px solid rgb(180 196 255 / 18%);
   border-radius: 16px;
   background: #111a32;
+  scroll-snap-align: start;
 }
 
 .recommendation-cover-link,
