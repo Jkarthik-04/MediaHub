@@ -343,6 +343,35 @@ export function addLibraryEntry(mediaItemId: string, status: LibraryStatus = 'PL
   });
 }
 
+export type RecommendationFeedback = 'USEFUL' | 'NOT_INTERESTED' | 'DISMISSED';
+
+export type Recommendation = {
+  id: string;
+  score: number;
+  reason: string;
+  modelVersion: string;
+  feedback: 'NONE' | RecommendationFeedback;
+  generatedAt: string;
+  mediaItem: MediaCatalogueItem;
+};
+
+export const getRecommendations = (limit = 12) =>
+  apiClient<ApiEnvelope<Recommendation[]>>(`/recommendations?limit=${limit}`);
+
+export const refreshRecommendations = (limit = 12) =>
+  apiClient<ApiEnvelope<Recommendation[]>>(`/recommendations/refresh?limit=${limit}`, {
+    method: 'POST',
+  });
+
+export const sendRecommendationFeedback = (
+  recommendationId: string,
+  feedback: RecommendationFeedback,
+) =>
+  apiClient<ApiEnvelope<{ id: string; feedback: RecommendationFeedback }>>(
+    `/recommendations/${encodeURIComponent(recommendationId)}/feedback`,
+    { method: 'POST', body: { feedback } },
+  );
+
 export type ConnectionProvider = {
   key: 'anilist' | 'trakt' | 'google-books';
   name: string;

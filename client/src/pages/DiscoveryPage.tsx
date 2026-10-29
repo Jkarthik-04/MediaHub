@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { EmptyState } from '../components/PageStates';
 import { PageHeader } from '../components/PageHeader';
 import { Pagination } from '../components/Pagination';
+import { RecommendationSection } from '../components/RecommendationSection';
 import { ApiError } from '../services/api-client';
 import { isCatalogueItemInLibrary, isProviderItemInLibrary } from '../utils/discovery-duplicates';
 import {
@@ -391,6 +392,12 @@ export function DiscoveryPage() {
           </div>
         </form>
       </section>
+
+      <RecommendationSection
+        libraryMediaIds={libraryMediaIds}
+        libraryLoading={libraryLoading}
+        onLibraryChanged={() => setSearchVersion((version) => version + 1)}
+      />
 
       {libraryCheckError && (
         <div className="surface" role="status">

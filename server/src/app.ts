@@ -18,6 +18,7 @@ import { importRouter } from './routes/import.routes.js';
 import { libraryRouter } from './routes/library.routes.js';
 import { mediaRouter } from './routes/media.routes.js';
 import { accountRouter } from './routes/account.routes.js';
+import { recommendationRouter } from './routes/recommendation.routes.js';
 import { prisma } from './utils/prisma.js';
 
 export const createApp = () => {
@@ -84,6 +85,7 @@ export const createApp = () => {
   app.use('/api/v1/discovery', discoveryRouter);
   app.use('/api/v1/connections', connectionRouter);
   app.use('/api/v1/imports', importRouter);
+  app.use('/api/v1/recommendations', recommendationRouter);
 
   app.use((_request, _response, next) => {
     next(new AppError(404, 'ROUTE_NOT_FOUND', 'The requested API route does not exist.'));

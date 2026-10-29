@@ -8,7 +8,6 @@ const navigation = [
   { to: '/discovery', label: 'Discovery' },
   { to: '/reading', label: 'Reading' },
   { to: '/watching', label: 'Watching' },
-  { to: '/recommendations', label: 'Recommendations' },
 ];
 
 export function AppShell() {

@@ -2,14 +2,16 @@
 
 ## Planning progress
 
-| Phase | Status | Completed artifacts |
-|---:|---|---|
-| 1 | **Planning complete; external setup pending** | [Project proposal](docs/phase-1/PROJECT_PROPOSAL.md), [source policy](docs/phase-1/SOURCE_POLICY.md) |
-| 2 | **Complete** | [Requirements and UX specification](docs/phase-2/REQUIREMENTS_AND_UX.md), [REST API contract](docs/phase-2/API_CONTRACT.md) |
-| 3 | **Complete** | [Database design](docs/phase-3/DATABASE_DESIGN.md), [data dictionary](docs/phase-3/DATA_DICTIONARY.md) |
-| 4 | **Complete** | [Foundation and setup](docs/phase-4/FOUNDATION.md), React/Express, Prisma, seed data, Docker Compose, CI |
-| 5 | **Complete** | [Implemented API reference](docs/phase-5/API_REFERENCE.md), [query-plan evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md), integration tests |
-| 6 | **Complete in code; OAuth cloud configuration pending** | [Authentication, authorization, and security](docs/phase-6/AUTHORIZATION_AND_SECURITY.md) |
+| Phase | Status                                                                                           | Completed artifacts                                                                                                                                                           |
+| ----: | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|     1 | **Planning complete; external setup pending**                                                    | [Project proposal](docs/phase-1/PROJECT_PROPOSAL.md), [source policy](docs/phase-1/SOURCE_POLICY.md)                                                                          |
+|     2 | **Complete**                                                                                     | [Requirements and UX specification](docs/phase-2/REQUIREMENTS_AND_UX.md), [REST API contract](docs/phase-2/API_CONTRACT.md)                                                   |
+|     3 | **Complete**                                                                                     | [Database design](docs/phase-3/DATABASE_DESIGN.md), [data dictionary](docs/phase-3/DATA_DICTIONARY.md)                                                                        |
+|     4 | **Complete**                                                                                     | [Foundation and setup](docs/phase-4/FOUNDATION.md), React/Express, Prisma, seed data, Docker Compose, CI                                                                      |
+|     5 | **Complete**                                                                                     | [Implemented API reference](docs/phase-5/API_REFERENCE.md), [query-plan evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md), integration tests                                     |
+|     6 | **Complete in code; OAuth cloud configuration pending**                                          | [Authentication, authorization, and security](docs/phase-6/AUTHORIZATION_AND_SECURITY.md)                                                                                     |
+|     7 | **Complete**                                                                                     | Responsive dashboard, Discovery, reading, watching, details, profile, connected-app, and admin interfaces                                                                     |
+|     8 | **Recommendation and provider MVP complete; provider registration remains environment-specific** | [Explainable recommendations](docs/phase-8/RECOMMENDATIONS.md), [connected apps](docs/Additional/CONNECTED_APPS.md), Jikan/OMDb/Open Library discovery and normalized imports |
 
 The local Git repository and `main`/`dev` branches are initialized. Phase 1 faculty approval and GitHub remote/collaborator configuration require external details and are intentionally left as follow-up actions. All locally completable planning work for Phases 1-3 is finished as of **5 October 2026**. Implementation begins at Phase 4.
 
@@ -19,11 +21,12 @@ The local Git repository and `main`/`dev` branches are initialized. Phase 1 facu
 
 External collection is the normal catalogue-building method. MediaHub should obtain metadata through official APIs, public exports, and permitted public-page scrapers, normalize that information, remove duplicates, and then save selected titles to PostgreSQL. Manual entry remains available only for niche, regional, independent, or newly released titles that none of the configured sources can find.
 
-The application has three main user-facing areas:
+The application has four main user-facing areas:
 
-1. **Central Dashboard** - combined progress, recent activity, statistics, search, and recommendations.
+1. **Central Dashboard** - combined progress, recent activity, and statistics.
 2. **Reading** - books and manga, including page/chapter/volume progress.
 3. **Watching** - movies, TV shows, and anime, including percentage/season/episode progress.
+4. **Discovery** - provider search/import and explainable cross-media recommendations.
 
 An additional **Admin area** is required to demonstrate role-based authorization and to manage users, metadata, imports, and audit records.
 
@@ -49,23 +52,23 @@ The project is complete only when the group can demonstrate all of the following
 
 ## 3. Agreed technical architecture
 
-| Area | Choice | Reason |
-|---|---|---|
-| Frontend | React + Vite | Fast setup and clean separation from the API |
-| Routing | React Router | Protected routes and dashboard/reading/watching navigation |
-| UI | Tailwind CSS or Material UI | Responsive reusable components; choose one and do not mix systems |
-| Data fetching | TanStack Query | Caching, loading/error states, mutations, and invalidation |
-| Forms | React Hook Form + Zod | Shared, explicit validation rules |
-| Backend | Node.js + Express.js | Required group stack and straightforward REST API design |
-| ORM | Prisma | Type-safe models, migrations, and parameterized queries |
-| Database | PostgreSQL | Supports constraints, views, triggers, functions, transactions, and indexing |
-| Authentication | Google OAuth through Passport.js plus secure server session | Meets the recommended OAuth requirement and avoids storing a Google password |
-| External data | APIs, public exports, and permitted scrapers behind provider adapters | Keeps source-specific logic away from the core database and API |
-| Password fallback | Argon2 only if local login is added | Secure hashing; local login is optional after OAuth works |
-| Tests | Vitest, React Testing Library, Supertest | Unit, component, and API testing |
-| Local environment | Docker Compose | Reproducible frontend/backend/database startup |
-| Deployment | Vercel frontend + Render/Railway backend and PostgreSQL | Clear separation of services and accessible live demo |
-| CI/CD | GitHub Actions | Bonus mark and automatic checks on pull requests |
+| Area              | Choice                                                               | Reason                                                                        |
+| ----------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Frontend          | React + Vite                                                         | Fast setup and clean separation from the API                                  |
+| Routing           | React Router                                                         | Protected routes and dashboard/reading/watching navigation                    |
+| UI                | Reusable React components and responsive CSS                         | Small dependency footprint and a consistent custom interface                  |
+| Data fetching     | Typed Fetch wrapper                                                  | Session-aware API requests and standard error handling                        |
+| Forms             | Controlled React forms + server-side Zod                             | Explicit client states and authoritative request validation                   |
+| Backend           | Node.js + Express.js                                                 | Required group stack and straightforward REST API design                      |
+| ORM               | Prisma                                                               | Type-safe models, migrations, and parameterized queries                       |
+| Database          | PostgreSQL                                                           | Supports constraints, views, triggers, functions, transactions, and indexing  |
+| Authentication    | Google OAuth through Passport.js plus secure server session          | Meets the recommended OAuth requirement and avoids storing a Google password  |
+| External data     | Jikan, OMDb, Open Library, AniList, Trakt, and Google Books adapters | Normalizes discovery and authorized account data behind provider services     |
+| Password fallback | Argon2 only if local login is added                                  | Secure hashing; local login is optional after OAuth works                     |
+| Tests             | Node test runner through `tsx`                                       | Client utility/component checks and live Express/PostgreSQL integration tests |
+| Local environment | Docker Compose                                                       | Reproducible frontend/backend/database startup                                |
+| Deployment        | Render web service + Neon PostgreSQL (planned)                       | One origin simplifies OAuth, cookies, CORS, and the live demonstration        |
+| CI/CD             | GitHub Actions CI; Render CD planned                                 | Automatic database-backed checks now and deployment after checks pass later   |
 
 ### High-level request flow
 
@@ -618,6 +621,12 @@ feat: build responsive dashboard reading watching and admin interface
 ---
 
 ## Phase 8 - External APIs, permitted scraping, and explainable recommendations
+
+**Status:** Recommendation, discovery/import, manual fallback, and connected-account MVPs are
+implemented. OAuth client registration and deployed callback URLs remain environment-specific setup.
+
+Implemented details are recorded in [Explainable recommendations](docs/phase-8/RECOMMENDATIONS.md)
+and [Connected Apps](docs/Additional/CONNECTED_APPS.md).
 
 **Goal:** Make external discovery/import the default way to populate MediaHub, preserve manual entry for missing niche works, and generate useful recommendations from the normalized catalogue.
 
