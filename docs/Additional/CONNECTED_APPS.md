@@ -102,7 +102,6 @@ ANILIST_CLIENT_SECRET=
 ANILIST_CALLBACK_URL=http://localhost:3000/api/v1/connections/anilist/callback
 
 TRAKT_CLIENT_ID=
-TRAKT_CLIENT_SECRET=
 TRAKT_CALLBACK_URL=http://localhost:3000/api/v1/connections/trakt/callback
 
 GOOGLE_BOOKS_CLIENT_ID=
@@ -122,7 +121,8 @@ The API integration suite checks that:
 - Missing connections return `USER_CONNECTION_NOT_FOUND` for sync.
 - Unconfigured providers return `CONNECTION_NOT_CONFIGURED`.
 - AniList produces a provider authorization redirect when configured.
-- Trakt and Google Books authorization URLs contain an S256 PKCE challenge.
+- Trakt and Google Books authorization URLs contain an S256 PKCE challenge. Trakt uses its current
+  client-ID-only PKCE flow and does not store or send a client secret for user authorization.
 - The Google Books request includes the Books authorization scope.
 
 Manual verification should connect a test account, confirm the automatic first sync, compare imported

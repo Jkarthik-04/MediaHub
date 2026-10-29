@@ -37,11 +37,7 @@ export const isAniListOAuthConfigured = () =>
   );
 
 export const isTraktOAuthConfigured = () =>
-  Boolean(
-    process.env.TRAKT_CLIENT_ID &&
-      process.env.TRAKT_CLIENT_SECRET &&
-      process.env.CONNECTION_TOKEN_ENCRYPTION_KEY,
-  );
+  Boolean(process.env.TRAKT_CLIENT_ID && process.env.CONNECTION_TOKEN_ENCRYPTION_KEY);
 
 export const isGoogleBooksOAuthConfigured = () =>
   Boolean(
