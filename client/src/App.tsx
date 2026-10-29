@@ -9,7 +9,6 @@ import { DashboardPage } from './pages/DashboardPage';
 import { DiscoveryPage } from './pages/DiscoveryPage';
 import { MediaDetailsPage } from './pages/MediaDetailsPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-import { RecommendationsPage } from './pages/RecommendationsPage';
 import { ReadingPage } from './pages/ReadingPage';
 import { WatchingPage } from './pages/WatchingPage';
 import { LoginPage } from './pages/LoginPage';
@@ -25,7 +24,7 @@ function App() {
           <Route path="reading" element={<ReadingPage />} />
           <Route path="watching" element={<WatchingPage />} />
           <Route path="media/:mediaId" element={<MediaDetailsPage />} />
-          <Route path="recommendations" element={<RecommendationsPage />} />
+          <Route path="recommendations" element={<Navigate replace to="/discovery" />} />
           <Route path="connections" element={<ConnectionsPage />} />
           <Route
             path="admin"

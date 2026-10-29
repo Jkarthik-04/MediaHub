@@ -1,18 +1,28 @@
 # MediaHub
 
-MediaHub is a React, Express, PostgreSQL, and Prisma application for organizing and
-tracking movies, TV shows, anime, manga, and books in one library. External providers
-will supply most catalogue data, while manual entry remains available for niche titles.
+MediaHub is a React, Express, PostgreSQL, and Prisma application for organizing and tracking movies,
+TV shows, anime, manga, and books in one library. External providers supply most catalogue data,
+while manual entry remains available for niche titles.
 
 ## Current status
 
-Planning Phases 1-3, the Phase 4 application/database foundation, the Phase 5 core API, and
-the Phase 6 authentication/authorization implementation are complete. The repository includes
-working React and Express applications, PostgreSQL,
-the 15-table Prisma schema, repeatable seed data, media/library/progress/dashboard APIs,
-Jikan/OMDb/Open Library discovery, staged imports, database views/function/trigger/indexes,
-secure Google OAuth session configuration, role-protected routes, integration tests, and
-continuous integration.
+Planning Phases 1-3 and the Phase 4-8 MVP implementation are complete. The repository includes
+working React and Express applications, PostgreSQL, the Prisma schema and migrations, repeatable seed
+data, responsive dashboard/reading/watching/discovery/admin interfaces, media/library/progress APIs,
+Jikan/OMDb/Open Library discovery, staged imports and manual review, database
+views/functions/triggers/indexes, Google OAuth sessions, role-protected routes, explainable
+cross-media recommendations, optional AniList/Trakt/Google Books account synchronization, integration
+tests, and GitHub Actions CI.
+
+## Implemented highlights
+
+- One normalized reading and watching library covering movies, TV, anime, manga, and books.
+- External discovery through Jikan, OMDb, and Open Library, with a controlled niche-title fallback.
+- Explainable `genre-vector-v1` recommendations integrated into Discovery.
+- Google OAuth login, PostgreSQL-backed sessions, `USER`/`ADMIN` authorization, and audit records.
+- Optional connected-account imports from AniList, Trakt, and Google Books.
+- Prisma migrations, transactions, constraints, indexes, views, a trigger, and database functions.
+- Automated client/server tests, ESLint, TypeScript checks, builds, formatting, and PostgreSQL-backed CI.
 
 ## Prerequisites
 
@@ -88,9 +98,8 @@ docker compose stop postgres
 | `npm run db:seed` | Insert or update the sample data |
 | `npm run db:studio` | Open Prisma Studio |
 
-The seed creates `admin@mediahub.local` and `user@mediahub.local` as development records.
-Authentication is implemented in a later phase, so these are not currently login
-credentials.
+The seed creates `admin@mediahub.local` and `user@mediahub.local` as database demonstration records.
+They are not local username/password credentials because MediaHub signs in through Google OAuth.
 
 ## Quality checks
 
@@ -114,8 +123,10 @@ pull requests and changes to `dev` or `main`.
 never commit API keys, OAuth secrets, session secrets, or production database credentials.
 
 The default development values work with the PostgreSQL service in `docker-compose.yml`.
-`OMDB_API_KEY` is required only for movie discovery. Jikan and Open Library searches need
-no API key. Google OAuth variables may remain empty until Phase 6.
+`OMDB_API_KEY` is required for movie discovery. Jikan and Open Library discovery need no API key.
+Google OAuth credentials are required for login. AniList, Trakt, and Google Books connection
+credentials are optional; the Connected Apps page marks a provider unavailable until its OAuth
+client and `CONNECTION_TOKEN_ENCRYPTION_KEY` are configured.
 
 ## Repository structure
 
@@ -140,4 +151,6 @@ docs/             Planning and database documentation
 - [Implemented Phase 5 API reference](docs/phase-5/API_REFERENCE.md)
 - [Query-plan and database-object evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md)
 - [Phase 6 authentication, authorization, and security](docs/phase-6/AUTHORIZATION_AND_SECURITY.md)
+- [Phase 8 explainable recommendations](docs/phase-8/RECOMMENDATIONS.md)
+- [Additional connected-app synchronization](docs/Additional/CONNECTED_APPS.md)
 - [Individual Git collaboration guide](docs/GIT_COLLABORATION_GUIDE.md)
