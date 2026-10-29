@@ -106,6 +106,17 @@ export function ProfileMenu({ user, onSignOut }: ProfileMenuProps) {
             <span>Connected apps</span>
             <span aria-hidden="true">→</span>
           </button>
+          <button
+            className="profile-section-button"
+            onClick={() => {
+              setIsOpen(false);
+              navigate('/account');
+            }}
+            type="button"
+          >
+            <span>Account and data</span>
+            <span aria-hidden="true">→</span>
+          </button>
           {error && <p className="profile-message profile-message-error">{error}</p>}
           {message && <p className="profile-message">{message}</p>}
           <button

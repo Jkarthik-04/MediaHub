@@ -155,6 +155,7 @@ model User {
   connections     UserConnection[]
   recommendations Recommendation[]
   auditLogs       AuditLog[]       @relation("AuditActor")
+  deletionChallenge AccountDeletionChallenge?
 
   @@map("users")
 }
@@ -166,6 +167,18 @@ model UserSession {
 
   @@index([expire])
   @@map("user_sessions")
+}
+
+model AccountDeletionChallenge {
+  userId        String   @id @map("user_id") @db.Uuid
+  codeHash      String   @map("code_hash") @db.VarChar(128)
+  expiresAt     DateTime @map("expires_at") @db.Timestamptz(6)
+  attempts      Int      @default(0)
+  requestedAt   DateTime @default(now()) @map("requested_at") @db.Timestamptz(6)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("account_deletion_challenges")
 }
 
 model MediaType {
