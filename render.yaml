@@ -1,0 +1,68 @@
+services:
+  - type: web
+    name: mediahub
+    runtime: node
+    plan: free
+    region: singapore
+    branch: main
+    autoDeployTrigger: off
+    buildCommand: npm ci && npm run db:generate && npm run build
+    startCommand: npm run db:deploy && npm run start --workspace server
+    initialDeployHook: npm run db:seed
+    healthCheckPath: /api/v1/health/live
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: SESSION_MAX_AGE_DAYS
+        value: '7'
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: ACCOUNT_EMAIL_FROM
+        sync: false
+      - key: OTP_PEPPER
+        sync: false
+      - key: JIKAN_BASE_URL
+        value: https://api.jikan.moe/v4
+      - key: OMDB_BASE_URL
+        value: https://www.omdbapi.com/
+      - key: OMDB_API_KEY
+        sync: false
+      - key: OPEN_LIBRARY_BASE_URL
+        value: https://openlibrary.org
+      - key: OPEN_LIBRARY_CONTACT_EMAIL
+        sync: false
+      - key: PROVIDER_REQUEST_TIMEOUT_MS
+        value: '15000'
+      - key: CONNECTION_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: ANILIST_CLIENT_ID
+        sync: false
+      - key: ANILIST_CLIENT_SECRET
+        sync: false
+      - key: ANILIST_CALLBACK_URL
+        sync: false
+      - key: TRAKT_CLIENT_ID
+        sync: false
+      - key: TRAKT_CLIENT_SECRET
+        sync: false
+      - key: TRAKT_CALLBACK_URL
+        sync: false
+      - key: GOOGLE_BOOKS_CLIENT_ID
+        sync: false
+      - key: GOOGLE_BOOKS_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_BOOKS_CALLBACK_URL
+        sync: false

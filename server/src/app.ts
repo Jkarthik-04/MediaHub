@@ -2,6 +2,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { fileURLToPath } from 'node:url';
 
 import { configurePassport, passport } from './config/passport.js';
 import { sessionMiddleware } from './config/session.js';
@@ -21,13 +22,24 @@ import { accountRouter } from './routes/account.routes.js';
 import { recommendationRouter } from './routes/recommendation.routes.js';
 import { prisma } from './utils/prisma.js';
 
+const clientDistPath = fileURLToPath(new URL('../../client/dist', import.meta.url));
+const clientIndexPath = fileURLToPath(new URL('../../client/dist/index.html', import.meta.url));
+
 export const createApp = () => {
   const app = express();
 
   configurePassport();
   if (isProduction) app.set('trust proxy', 1);
   app.disable('x-powered-by');
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          imgSrc: ["'self'", 'data:', 'https:'],
+        },
+      },
+    }),
+  );
   app.use(cors({ origin: clientOrigin, credentials: true }));
   app.use(
     rateLimit({
@@ -86,6 +98,22 @@ export const createApp = () => {
   app.use('/api/v1/connections', connectionRouter);
   app.use('/api/v1/imports', importRouter);
   app.use('/api/v1/recommendations', recommendationRouter);
+
+  app.use('/api', (_request, _response, next) => {
+    next(new AppError(404, 'ROUTE_NOT_FOUND', 'The requested API route does not exist.'));
+  });
+
+  if (isProduction) {
+    app.use(express.static(clientDistPath, { index: false }));
+    app.use((request, response, next) => {
+      if (request.method === 'GET' && request.accepts('html')) {
+        response.sendFile(clientIndexPath);
+        return;
+      }
+
+      next();
+    });
+  }
 
   app.use((_request, _response, next) => {
     next(new AppError(404, 'ROUTE_NOT_FOUND', 'The requested API route does not exist.'));
