@@ -6,7 +6,7 @@ services:
     region: singapore
     branch: main
     autoDeployTrigger: off
-    buildCommand: npm ci && npm run db:generate && npm run build
+    buildCommand: npm ci --include=dev && npm run db:generate && npm run build
     startCommand: npm run db:deploy && npm run start --workspace server
     initialDeployHook: npm run db:seed
     healthCheckPath: /api/v1/health/live
