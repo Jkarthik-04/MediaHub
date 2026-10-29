@@ -1,0 +1,51 @@
+{
+  "name": "@mediahub/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --include ../.env src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "dotenv -e ../.env -- tsx --test test/**/*.test.ts",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit --pretty false && tsc -p tsconfig.test.json --pretty false && tsc -p prisma/tsconfig.json --noEmit --pretty false",
+    "db:generate": "dotenv -e ../.env -- prisma generate",
+    "db:validate": "dotenv -e ../.env -- prisma validate",
+    "db:migrate": "dotenv -e ../.env -- prisma migrate dev",
+    "db:deploy": "dotenv -e ../.env -- prisma migrate deploy",
+    "db:seed": "dotenv -e ../.env -- prisma db seed",
+    "db:studio": "dotenv -e ../.env -- prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "6.12.0",
+    "connect-pg-simple": "^10.0.0",
+    "cookie-signature": "^1.2.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "express-session": "^1.19.0",
+    "helmet": "^8.3.0",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.23.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/connect-pg-simple": "^7.0.3",
+    "@types/cookie-signature": "^1.1.2",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/express-session": "^1.19.0",
+    "@types/node": "^26.6.5",
+    "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.17",
+    "@types/pg": "^8.23.1",
+    "dotenv-cli": "^11.0.0",
+    "prisma": "6.12.0",
+    "tsx": "^4.23.15"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}

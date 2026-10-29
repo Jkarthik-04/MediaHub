@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1320" viewBox="0 0 1800 1320" role="img" aria-labelledby="title desc">
+  <title id="title">MediaHub Relational Schema</title><desc id="desc">Normalized relational schema for every MediaHub database table, with primary and foreign keys.</desc>
+  <style>.bg{fill:#f7f9fc}.h{font:700 30px Arial;fill:#14213d}.s{font:16px Arial;fill:#50627a}.t{font:700 17px Arial;fill:#173b67}.x{font:14px 'Courier New',monospace;fill:#1d2b3a}.note{font:13px Arial;fill:#50627a}.line{stroke:#c1cbda}</style>
+  <rect class="bg" width="1800" height="1320"/><text x="55" y="52" class="h">MediaHub — Relational Schema</text><text x="55" y="80" class="s">PK is underlined conceptually; FK references are shown using →. Composite keys and unique constraints are explicitly listed.</text>
+  <g transform="translate(55 120)">
+    <text class="t" x="0" y="0">Identity</text>
+    <text class="x" x="0" y="30">ROLES(id PK, name UNIQUE NOT NULL)</text>
+    <text class="x" x="0" y="55">USERS(id PK, role_id FK → ROLES.id, google_subject UNIQUE, email UNIQUE, display_name, status DEFAULT ACTIVE, ...)</text>
+    <text class="x" x="0" y="80">USER_SESSIONS(sid PK, sess JSONB NOT NULL, expire NOT NULL)</text>
+    <text class="x" x="0" y="105">AUDIT_LOGS(id PK, actor_user_id FK → USERS.id NULL, action, entity_type, entity_id, created_at DEFAULT now())</text>
+    <line class="line" x1="0" y1="123" x2="1690" y2="123"/>
+    <text class="t" x="0" y="155">Catalogue</text>
+    <text class="x" x="0" y="185">MEDIA_TYPES(id PK, code UNIQUE, name UNIQUE, section, progress_mode)</text>
+    <text class="x" x="0" y="210">MEDIA_ITEMS(id PK, media_type_id FK → MEDIA_TYPES.id, created_by_user_id FK → USERS.id NULL,</text>
+    <text class="x" x="20" y="232">title, normalized_title, cover_url NULL, total_units CHECK ≥ 0, origin, review_status, is_active DEFAULT true, ...)</text>
+    <text class="x" x="0" y="257">GENRES(id PK, name UNIQUE, slug UNIQUE)</text>
+    <text class="x" x="0" y="282">MEDIA_GENRES(media_item_id PK/FK → MEDIA_ITEMS.id, genre_id PK/FK → GENRES.id)</text>
+    <text class="x" x="0" y="307">MEDIA_UNITS(id PK, media_item_id FK → MEDIA_ITEMS.id, parent_unit_id FK → MEDIA_UNITS.id NULL,</text>
+    <text class="x" x="20" y="329">unit_kind, sequence_number CHECK ≥ 0, UNIQUE(media_item_id, unit_kind, sequence_number), ...)</text>
+    <line class="line" x1="0" y1="347" x2="1690" y2="347"/>
+    <text class="t" x="0" y="379">Personal tracking</text>
+    <text class="x" x="0" y="409">LIBRARY_ENTRIES(id PK, user_id FK → USERS.id, media_item_id FK → MEDIA_ITEMS.id,</text>
+    <text class="x" x="20" y="431">current_unit_id FK → MEDIA_UNITS.id NULL, status DEFAULT PLANNED, progress_value DEFAULT 0 CHECK ≥ 0,</text>
+    <text class="x" x="20" y="453">rating NULL CHECK 1..10, UNIQUE(user_id, media_item_id), ...)</text>
+    <text class="x" x="0" y="478">PROGRESS_EVENTS(id PK, library_entry_id FK → LIBRARY_ENTRIES.id, unit_id FK → MEDIA_UNITS.id NULL,</text>
+    <text class="x" x="20" y="500">old_progress NULL CHECK ≥ 0, new_progress CHECK ≥ 0, recorded_at DEFAULT now(), ...)</text>
+    <line class="line" x1="0" y1="518" x2="1690" y2="518"/>
+    <text class="t" x="0" y="550">External metadata and controlled import</text>
+    <text class="x" x="0" y="580">SOURCES(id PK, key UNIQUE, name UNIQUE, connector_kind, base_url, is_enabled DEFAULT true, terms_checked_at)</text>
+    <text class="x" x="0" y="605">EXTERNAL_MAPPINGS(id PK, media_item_id FK → MEDIA_ITEMS.id, source_id FK → SOURCES.id, external_id,</text>
+    <text class="x" x="20" y="627">source_url, UNIQUE(source_id, external_id), last_synced_at DEFAULT now())</text>
+    <text class="x" x="0" y="652">INGESTION_JOBS(id PK, requested_by_user_id FK → USERS.id, source_id FK → SOURCES.id NULL, kind,</text>
+    <text class="x" x="20" y="674">status DEFAULT QUEUED, candidate_count/imported_count/skipped_count/failed_count DEFAULT 0 CHECK ≥ 0, ...)</text>
+    <text class="x" x="0" y="699">INGESTION_CANDIDATES(id PK, job_id FK → INGESTION_JOBS.id, source_id FK → SOURCES.id,</text>
+    <text class="x" x="20" y="721">media_type_id FK → MEDIA_TYPES.id, match_media_id FK → MEDIA_ITEMS.id NULL, external_id,</text>
+    <text class="x" x="20" y="743">normalized_payload JSONB, match_confidence NULL CHECK 0..1, UNIQUE(job_id, source_id, external_id), ...)</text>
+    <line class="line" x1="0" y1="761" x2="1690" y2="761"/>
+    <text class="t" x="0" y="793">Recommendations</text>
+    <text class="x" x="0" y="823">RECOMMENDATIONS(id PK, user_id FK → USERS.id, media_item_id FK → MEDIA_ITEMS.id,</text>
+    <text class="x" x="20" y="845">score CHECK 0..1, model_version, reason, feedback DEFAULT NONE, generated_at DEFAULT now(),</text>
+    <text class="x" x="20" y="867">UNIQUE(user_id, media_item_id, model_version, generated_at))</text>
+    <line class="line" x1="0" y1="895" x2="1690" y2="895"/>
+    <text class="t" x="0" y="930">Index plan implemented</text>
+    <text class="note" x="0" y="958">• Media search: MEDIA_ITEMS(media_type_id, normalized_title) and MEDIA_ITEMS(review_status, is_active, created_at DESC)</text>
+    <text class="note" x="0" y="980">• Library dashboard: LIBRARY_ENTRIES(user_id, status, updated_at DESC) and LIBRARY_ENTRIES(user_id, updated_at DESC)</text>
+    <text class="note" x="0" y="1002">• Progress/history: PROGRESS_EVENTS(library_entry_id, recorded_at DESC); recommendations: RECOMMENDATIONS(user_id, score DESC)</text>
+    <text class="note" x="0" y="1024">• Import and source lookup: EXTERNAL_MAPPINGS(source_id, external_id), INGESTION_JOBS(requested_by_user_id, status, requested_at DESC),</text>
+    <text class="note" x="20" y="1046">INGESTION_CANDIDATES(job_id, decision), plus FK-supporting and unique indexes shown above.</text>
+  </g>
+</svg>

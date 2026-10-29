@@ -1,12 +1,144 @@
 # MediaHub
 
-MediaHub is a planned React, Express.js, PostgreSQL, and Prisma application for importing, organizing, tracking, and recommending movies, TV shows, anime, manga, and books in one library.
+MediaHub is a React, Express, PostgreSQL, and Prisma application for organizing and tracking movies,
+TV shows, anime, manga, and books in one library. External providers supply most catalogue data,
+while manual entry remains available for niche titles.
 
 ## Current status
 
-Planning Phases 1-3 are complete. Implementation begins with Phase 4.
+Planning Phases 1-3 and the Phase 4-8 MVP implementation are complete. The repository includes
+working React and Express applications, PostgreSQL, the Prisma schema and migrations, repeatable seed
+data, responsive dashboard/reading/watching/discovery/admin interfaces, media/library/progress APIs,
+Jikan/OMDb/Open Library discovery, staged imports and manual review, database
+views/functions/triggers/indexes, Google OAuth sessions, role-protected routes, explainable
+cross-media recommendations, optional AniList/Trakt/Google Books account synchronization, integration
+tests, and GitHub Actions CI.
 
-## Planning documents
+## Implemented highlights
+
+- One normalized reading and watching library covering movies, TV, anime, manga, and books.
+- External discovery through Jikan, OMDb, and Open Library, with a controlled niche-title fallback.
+- Explainable `genre-vector-v1` recommendations integrated into Discovery.
+- Google OAuth login, PostgreSQL-backed sessions, `USER`/`ADMIN` authorization, and audit records.
+- Optional connected-account imports from AniList, Trakt, and Google Books.
+- Prisma migrations, transactions, constraints, indexes, views, a trigger, and database functions.
+- Automated client/server tests, ESLint, TypeScript checks, builds, formatting, and PostgreSQL-backed CI.
+
+## Prerequisites
+
+- Git
+- Node.js 24 or newer with npm
+- Docker Desktop with Docker Compose
+
+## First-time setup
+
+Clone the repository and enter the project:
+
+```bash
+git clone https://github.com/Jkarthik-04/MediaHub.git
+cd MediaHub
+git switch dev
+```
+
+Install the dependencies and create the local environment file:
+
+```bash
+npm install
+cp .env.example .env
+```
+
+Start PostgreSQL, apply the migrations, and add the sample data:
+
+```bash
+docker compose up -d postgres
+npm run db:migrate
+npm run db:seed
+```
+
+The seed command is repeatable. Running it again updates the same sample records instead
+of inserting duplicates.
+
+## Start MediaHub
+
+Run the server in one terminal:
+
+```bash
+npm run dev:server
+```
+
+Run the React client in a second terminal:
+
+```bash
+npm run dev:client
+```
+
+Open these addresses:
+
+- React client: <http://localhost:5174>
+- Express API: <http://localhost:3000/api/v1>
+- Liveness check: <http://localhost:3000/api/v1/health/live>
+- Database readiness check: <http://localhost:3000/api/v1/health/ready>
+
+If either port is already occupied, use the replacement URL printed in that terminal.
+
+Stop the applications with `Ctrl+C`. Stop PostgreSQL with:
+
+```bash
+docker compose stop postgres
+```
+
+## Database commands
+
+| Command | Purpose |
+|---|---|
+| `npm run db:validate` | Validate the Prisma schema |
+| `npm run db:generate` | Generate the Prisma client |
+| `npm run db:migrate` | Apply development migrations |
+| `npm run db:deploy` | Apply existing migrations non-interactively, as CI/deployment does |
+| `npm run db:seed` | Insert or update the sample data |
+| `npm run db:studio` | Open Prisma Studio |
+
+The seed creates `admin@mediahub.local` and `user@mediahub.local` as database demonstration records.
+They are not local username/password credentials because MediaHub signs in through Google OAuth.
+
+## Quality checks
+
+Run the same checks used by GitHub Actions:
+
+```bash
+npm run db:generate
+npm test
+npm run lint
+npm run typecheck
+npm run build
+npm run format:check
+```
+
+The CI workflow starts PostgreSQL, applies migrations, seeds it, and runs these checks for
+pull requests and changes to `dev` or `main`.
+
+## Environment variables
+
+`.env.example` documents every expected variable. Keep the local `.env` file private and
+never commit API keys, OAuth secrets, session secrets, or production database credentials.
+
+The default development values work with the PostgreSQL service in `docker-compose.yml`.
+`OMDB_API_KEY` is required for movie discovery. Jikan and Open Library discovery need no API key.
+Google OAuth credentials are required for login. AniList, Trakt, and Google Books connection
+credentials are optional; the Connected Apps page marks a provider unavailable until its OAuth
+client and `CONNECTION_TOKEN_ENCRYPTION_KEY` are configured.
+
+## Repository structure
+
+```text
+client/           React and Vite application
+server/src/       Express application
+server/prisma/    Prisma schema, migrations, and seed
+docs/             Planning and database documentation
+.github/          GitHub Actions workflows
+```
+
+## Project documentation
 
 - [Master project plan](PROJECT_PLAN.md)
 - [Project proposal](docs/phase-1/PROJECT_PROPOSAL.md)
@@ -15,14 +147,14 @@ Planning Phases 1-3 are complete. Implementation begins with Phase 4.
 - [REST API contract](docs/phase-2/API_CONTRACT.md)
 - [Database design and ER diagram](docs/phase-3/DATABASE_DESIGN.md)
 - [Data dictionary](docs/phase-3/DATA_DICTIONARY.md)
+- [Phase 4 foundation and setup](docs/phase-4/FOUNDATION.md)
+- [Implemented Phase 5 API reference](docs/phase-5/API_REFERENCE.md)
+- [Query-plan and database-object evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md)
+- [Phase 6 authentication, authorization, and security](docs/phase-6/AUTHORIZATION_AND_SECURITY.md)
+- [Phase 8 explainable recommendations](docs/phase-8/RECOMMENDATIONS.md)
+- [Additional connected-app synchronization](docs/Additional/CONNECTED_APPS.md)
 - [Individual Git collaboration guide](docs/GIT_COLLABORATION_GUIDE.md)
 
-## Planned stack
+### Account deletion email configuration
 
-- React and Vite
-- Node.js and Express.js
-- PostgreSQL and Prisma ORM
-- Google OAuth 2.0 and Passport.js
-- Docker Compose and GitHub Actions
-
-Setup and execution commands will be added in Phase 4 when the client, server, database, migrations, and seed scripts are created.
+Account deletion verification codes are sent through Resend's email API. Configure `RESEND_API_KEY` and `ACCOUNT_EMAIL_FROM` (a sender address verified with Resend) in the server environment. `OTP_PEPPER` is an optional high-entropy secret used in OTP hashing; if omitted, the session secret is used. Keep the selected secret consistent across server instances. Codes expire after 10 minutes, allow five incorrect attempts, and can be re-requested once per minute (with an additional five requests per hour per client IP). The account backup is available at `GET /api/v1/account/backup`; deletion endpoints are `POST /api/v1/account/deletion-code` and `POST /api/v1/account/delete`.
