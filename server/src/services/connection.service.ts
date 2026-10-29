@@ -199,7 +199,7 @@ export const createTraktAuthorizationUrl = (state: string, codeChallenge: string
     );
   }
 
-  const url = new URL('https://trakt.tv/oauth/authorize');
+  const url = new URL('https://auth.trakt.tv/oauth/authorize');
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('client_id', process.env.TRAKT_CLIENT_ID!);
   url.searchParams.set('redirect_uri', traktCallbackUrl());
@@ -224,7 +224,6 @@ export const connectTraktAccount = async (userId: string, code: string, codeVeri
     body: JSON.stringify({
       code,
       client_id: process.env.TRAKT_CLIENT_ID,
-      client_secret: process.env.TRAKT_CLIENT_SECRET,
       redirect_uri: traktCallbackUrl(),
       grant_type: 'authorization_code',
       code_verifier: codeVerifier,

@@ -234,7 +234,7 @@ test('MediaHub API security and core workflow', async (t) => {
     if (isTraktOAuthConfigured()) {
       assert.equal(traktConnect.status, 302);
       const location = new URL(traktConnect.headers.get('location') ?? '');
-      assert.equal(location.origin, 'https://trakt.tv');
+      assert.equal(location.origin, 'https://auth.trakt.tv');
       assert.equal(location.searchParams.get('code_challenge_method'), 'S256');
       assert.ok(location.searchParams.get('code_challenge'));
     } else {
