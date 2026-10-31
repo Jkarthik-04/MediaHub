@@ -1,5 +1,8 @@
 # Phase 5 API Reference
 
+**Status:** Implemented and used by the React client. Provider-specific discovery adapters and
+connected-account synchronization are documented separately in Phase 8 and Additional.
+
 This document describes the endpoints that are implemented and tested at the end of
 Phase 5. The earlier Phase 2 contract remains the long-term design; this reference is the
 current runnable API.

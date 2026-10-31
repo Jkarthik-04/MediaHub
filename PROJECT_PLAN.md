@@ -7,13 +7,16 @@
 |     1 | **Planning complete; external setup pending**                                                    | [Project proposal](docs/phase-1/PROJECT_PROPOSAL.md), [source policy](docs/phase-1/SOURCE_POLICY.md)                                                                          |
 |     2 | **Complete**                                                                                     | [Requirements and UX specification](docs/phase-2/REQUIREMENTS_AND_UX.md), [REST API contract](docs/phase-2/API_CONTRACT.md)                                                   |
 |     3 | **Complete**                                                                                     | [Database design](docs/phase-3/DATABASE_DESIGN.md), [data dictionary](docs/phase-3/DATA_DICTIONARY.md)                                                                        |
-|     4 | **Complete**                                                                                     | [Foundation and setup](docs/phase-4/FOUNDATION.md), React/Express, Prisma, seed data, Docker Compose, CI                                                                      |
+|     4 | **Complete**                                                                                     | [Foundation and setup](docs/phase-4/FOUNDATION.md), React/Express, Prisma, 18-table schema, seed data, Docker Compose, CI                                                     |
 |     5 | **Complete**                                                                                     | [Implemented API reference](docs/phase-5/API_REFERENCE.md), [query-plan evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md), integration tests                                     |
 |     6 | **Complete in code; OAuth cloud configuration pending**                                          | [Authentication, authorization, and security](docs/phase-6/AUTHORIZATION_AND_SECURITY.md)                                                                                     |
-|     7 | **Complete**                                                                                     | Responsive dashboard, Discovery, reading, watching, details, profile, connected-app, and admin interfaces                                                                     |
+|     7 | **Complete**                                                                                     | [Frontend implementation](docs/phase-7/FRONTEND_IMPLEMENTATION.md), responsive dashboard, Discovery, reading, watching, profile, connected-app, and admin interfaces          |
 |     8 | **Recommendation and provider MVP complete; provider registration remains environment-specific** | [Explainable recommendations](docs/phase-8/RECOMMENDATIONS.md), [connected apps](docs/Additional/CONNECTED_APPS.md), Jikan/OMDb/Open Library discovery and normalized imports |
 
-The local Git repository and `main`/`dev` branches are initialized. Phase 1 faculty approval and GitHub remote/collaborator configuration require external details and are intentionally left as follow-up actions. All locally completable planning work for Phases 1-3 is finished as of **5 October 2026**. Implementation begins at Phase 4.
+The local Git repository and `main`/`dev` branches are initialized. Phase 1 faculty approval and
+GitHub collaborator configuration remain external administrative actions. The implementation and
+deployment evidence is now documented through Phase 10; provider OAuth registration and production
+secret values remain environment-specific.
 
 ## 1. Project summary
 
@@ -67,8 +70,8 @@ The project is complete only when the group can demonstrate all of the following
 | Password fallback | Argon2 only if local login is added                                  | Secure hashing; local login is optional after OAuth works                     |
 | Tests             | Node test runner through `tsx`                                       | Client utility/component checks and live Express/PostgreSQL integration tests |
 | Local environment | Docker Compose                                                       | Reproducible frontend/backend/database startup                                |
-| Deployment        | Render web service + Neon PostgreSQL (planned)                       | One origin simplifies OAuth, cookies, CORS, and the live demonstration        |
-| CI/CD             | GitHub Actions CI; Render CD planned                                 | Automatic database-backed checks now and deployment after checks pass later   |
+| Deployment        | Render web service + Neon PostgreSQL                                 | One origin simplifies OAuth, cookies, CORS, and the live demonstration        |
+| CI/CD             | GitHub Actions CI with Render deployment trigger                     | Database-backed checks run before production deployment                      |
 
 ### High-level request flow
 
@@ -441,7 +444,8 @@ feat: scaffold React Express PostgreSQL and Prisma foundation
 3. Implement media CRUD and library CRUD with ownership rules.
 4. Implement source, ingestion-job, and ingestion-candidate repositories before writing site-specific collectors.
 5. Define one normalized `ProviderMedia` shape used by APIs, importers, and permitted scrapers.
-6. Add discovery, preview, confirmation, job-status, and manual-title endpoints. At this stage they may use seeded/mock provider data; the real connectors arrive in Phase 8.
+6. Add discovery, preview, confirmation, job-status, and manual-title endpoints. The API exposes a
+   provider-neutral contract; live Jikan, OMDb, and Open Library adapters are implemented in Phase 8.
 7. Implement progress updates inside a transaction:
    - Read and validate the library entry.
    - Update current progress/status.

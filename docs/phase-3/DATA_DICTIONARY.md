@@ -1,9 +1,16 @@
 # MediaHub Data Dictionary
 
-**Schema version:** Planning v1  
+**Schema version:** Implemented v1 plus additive authentication, deletion, and connected-account migrations
 **Conventions:** UUID primary keys use `gen_random_uuid()`; timestamps use `TIMESTAMPTZ`; text lengths are finalised in the Prisma migration review.
 
 Abbreviations: **PK** primary key, **FK** foreign key, **UQ** unique, **NN** not null.
+
+The original planning dictionary below documents the core catalogue and library tables. The
+implemented schema also contains these additive tables, documented in the Prisma schema and
+migration history: `user_sessions`, `account_deletion_challenges`, and `user_connections`.
+Together with the core tables and their bridge/staging/audit entities, the current ER diagram
+contains 18 tables. See [the implemented ER diagram](../database/mediahub-er-diagram.svg) and
+[relational schema](../database/mediahub-relational-schema.svg) for the complete relationship view.
 
 ## `roles`
 
