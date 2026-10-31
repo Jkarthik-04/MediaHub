@@ -11,7 +11,9 @@ group member can run using the same commands.
 - Express API organized into routes, controllers, services, repositories, middleware,
   providers, validation, and utilities.
 - PostgreSQL 17 development database managed through Docker Compose.
-- Prisma schema containing the 15 planned MediaHub tables and their relationships.
+- Prisma schema containing the implemented MediaHub tables and their relationships. The current
+  schema includes 18 tables, including sessions, account-deletion challenges, connected accounts,
+  import staging, recommendations, and audit logs.
 - Initial migration history committed under `server/prisma/migrations`.
 - Repeatable seed script containing roles, users, media types, genres, sources, sample
   titles, library entries, progress, mappings, ingestion data, and a recommendation.

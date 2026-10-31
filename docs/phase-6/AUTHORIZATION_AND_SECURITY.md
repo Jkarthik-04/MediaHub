@@ -116,6 +116,15 @@ navigation item never grants or removes API permission.
 - Errors return `401 AUTHENTICATION_REQUIRED` for no/expired sessions and `403 FORBIDDEN` for
   an authenticated user lacking a required role.
 
+### Account deletion and verification
+
+The account page supports a backup download followed by email OTP verification before permanent
+deletion. Codes are sent through Resend, expire after 10 minutes, are hashed with `OTP_PEPPER`
+(falling back to the session secret when the pepper is omitted), and are protected by attempt and
+request rate limits. Configure `RESEND_API_KEY`, `ACCOUNT_EMAIL_FROM`, and optionally `OTP_PEPPER`
+in the deployment secret store; never commit them. The backup excludes authentication credentials
+and provider tokens.
+
 ## Test evidence
 
 Run:

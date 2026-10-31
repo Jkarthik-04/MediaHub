@@ -1,61 +1,151 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1220" viewBox="0 0 1800 1220" role="img" aria-labelledby="title desc">
-  <title id="title">MediaHub Entity Relationship Diagram</title>
-  <desc id="desc">ER diagram showing all sixteen MediaHub database tables and their foreign-key relationships.</desc>
-  <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L10,3 L0,6 Z" fill="#52637a"/></marker>
-    <style>
-      .bg{fill:#f7f9fc}.title{font:700 30px Arial;fill:#14213d}.sub{font:16px Arial;fill:#50627a}.box{fill:#fff;stroke:#52637a;stroke-width:1.5}.head{fill:#183b68}.name{font:700 16px Arial;fill:#fff}.field{font:13px Arial;fill:#1d2b3a}.pk{font:700 13px Arial;fill:#0e5b45}.fk{font:13px Arial;fill:#8c3e00}.line{stroke:#52637a;stroke-width:1.4;fill:none;marker-end:url(#arrow)}.rel{font:12px Arial;fill:#46566d}.cluster{fill:none;stroke:#aebbd0;stroke-width:1.5;stroke-dasharray:7 5}.clusterlabel{font:700 15px Arial;fill:#52637a}
-    </style>
-  </defs>
-  <rect class="bg" width="1800" height="1220"/>
-  <text x="55" y="52" class="title">MediaHub — Entity Relationship Diagram</text>
-  <text x="55" y="79" class="sub">PK = Primary Key · FK = Foreign Key · all tables are represented from the implemented PostgreSQL/Prisma schema</text>
-
-  <rect x="35" y="105" width="470" height="430" rx="8" class="cluster"/><text x="52" y="130" class="clusterlabel">Identity and accountability</text>
-  <rect x="55" y="155" width="180" height="105" rx="5" class="box"/><rect x="55" y="155" width="180" height="28" rx="5" class="head"/><text x="67" y="174" class="name">roles</text><text x="67" y="203" class="pk">PK id</text><text x="67" y="224" class="field">name (UNIQUE)</text>
-  <rect x="280" y="155" width="200" height="150" rx="5" class="box"/><rect x="280" y="155" width="200" height="28" rx="5" class="head"/><text x="292" y="174" class="name">users</text><text x="292" y="203" class="pk">PK id</text><text x="292" y="224" class="fk">FK role_id</text><text x="292" y="245" class="field">google_subject (UNIQUE)</text><text x="292" y="266" class="field">email (UNIQUE), status</text><text x="292" y="287" class="field">display_name, avatar_url</text>
-  <rect x="55" y="345" width="180" height="92" rx="5" class="box"/><rect x="55" y="345" width="180" height="28" rx="5" class="head"/><text x="67" y="364" class="name">user_sessions</text><text x="67" y="393" class="pk">PK sid</text><text x="67" y="414" class="field">sess, expire (INDEX)</text>
-  <rect x="280" y="345" width="200" height="110" rx="5" class="box"/><rect x="280" y="345" width="200" height="28" rx="5" class="head"/><text x="292" y="364" class="name">audit_logs</text><text x="292" y="393" class="pk">PK id</text><text x="292" y="414" class="fk">FK actor_user_id (nullable)</text><text x="292" y="435" class="field">action, entity_type, entity_id</text>
-
-  <rect x="545" y="105" width="690" height="430" rx="8" class="cluster"/><text x="562" y="130" class="clusterlabel">Media catalogue and personal library</text>
-  <rect x="570" y="155" width="190" height="105" rx="5" class="box"/><rect x="570" y="155" width="190" height="28" rx="5" class="head"/><text x="582" y="174" class="name">media_types</text><text x="582" y="203" class="pk">PK id</text><text x="582" y="224" class="field">code, name (UNIQUE)</text><text x="582" y="245" class="field">section, progress_mode</text>
-  <rect x="805" y="145" width="210" height="170" rx="5" class="box"/><rect x="805" y="145" width="210" height="28" rx="5" class="head"/><text x="817" y="164" class="name">media_items</text><text x="817" y="193" class="pk">PK id</text><text x="817" y="214" class="fk">FK media_type_id</text><text x="817" y="235" class="fk">FK created_by_user_id</text><text x="817" y="256" class="field">title, normalized_title</text><text x="817" y="277" class="field">cover_url, release_date</text><text x="817" y="298" class="field">origin, review_status</text>
-  <rect x="1060" y="155" width="145" height="95" rx="5" class="box"/><rect x="1060" y="155" width="145" height="28" rx="5" class="head"/><text x="1072" y="174" class="name">genres</text><text x="1072" y="203" class="pk">PK id</text><text x="1072" y="224" class="field">name, slug (UNIQUE)</text>
-  <rect x="1040" y="292" width="175" height="92" rx="5" class="box"/><rect x="1040" y="292" width="175" height="28" rx="5" class="head"/><text x="1052" y="311" class="name">media_genres</text><text x="1052" y="340" class="pk">PK/FK media_item_id</text><text x="1052" y="361" class="pk">PK/FK genre_id</text>
-  <rect x="570" y="345" width="190" height="128" rx="5" class="box"/><rect x="570" y="345" width="190" height="28" rx="5" class="head"/><text x="582" y="364" class="name">media_units</text><text x="582" y="393" class="pk">PK id</text><text x="582" y="414" class="fk">FK media_item_id</text><text x="582" y="435" class="fk">FK parent_unit_id</text><text x="582" y="456" class="field">unit_kind, sequence_number</text>
-  <rect x="805" y="365" width="210" height="128" rx="5" class="box"/><rect x="805" y="365" width="210" height="28" rx="5" class="head"/><text x="817" y="384" class="name">library_entries</text><text x="817" y="413" class="pk">PK id</text><text x="817" y="434" class="fk">FK user_id, media_item_id</text><text x="817" y="455" class="fk">FK current_unit_id (nullable)</text><text x="817" y="476" class="field">status, progress_value, rating</text>
-  <rect x="1040" y="420" width="175" height="92" rx="5" class="box"/><rect x="1040" y="420" width="175" height="28" rx="5" class="head"/><text x="1052" y="439" class="name">progress_events</text><text x="1052" y="468" class="pk">PK id</text><text x="1052" y="489" class="fk">FK library_entry_id, unit_id</text>
-
-  <rect x="1265" y="105" width="500" height="430" rx="8" class="cluster"/><text x="1282" y="130" class="clusterlabel">External sources and staged import</text>
-  <rect x="1290" y="155" width="180" height="115" rx="5" class="box"/><rect x="1290" y="155" width="180" height="28" rx="5" class="head"/><text x="1302" y="174" class="name">sources</text><text x="1302" y="203" class="pk">PK id</text><text x="1302" y="224" class="field">key, name (UNIQUE)</text><text x="1302" y="245" class="field">connector_kind, base_url</text>
-  <rect x="1515" y="155" width="210" height="112" rx="5" class="box"/><rect x="1515" y="155" width="210" height="28" rx="5" class="head"/><text x="1527" y="174" class="name">external_mappings</text><text x="1527" y="203" class="pk">PK id</text><text x="1527" y="224" class="fk">FK media_item_id, source_id</text><text x="1527" y="245" class="field">external_id (unique per source)</text>
-  <rect x="1290" y="330" width="200" height="138" rx="5" class="box"/><rect x="1290" y="330" width="200" height="28" rx="5" class="head"/><text x="1302" y="349" class="name">ingestion_jobs</text><text x="1302" y="378" class="pk">PK id</text><text x="1302" y="399" class="fk">FK requested_by_user_id</text><text x="1302" y="420" class="fk">FK source_id (nullable)</text><text x="1302" y="441" class="field">kind, status, counts</text>
-  <rect x="1530" y="330" width="195" height="155" rx="5" class="box"/><rect x="1530" y="330" width="195" height="28" rx="5" class="head"/><text x="1542" y="349" class="name">ingestion_candidates</text><text x="1542" y="378" class="pk">PK id</text><text x="1542" y="399" class="fk">FK job_id, source_id</text><text x="1542" y="420" class="fk">FK media_type_id</text><text x="1542" y="441" class="fk">FK match_media_id (nullable)</text><text x="1542" y="462" class="field">external_id, decision</text>
-
-  <rect x="500" y="590" width="770" height="250" rx="8" class="cluster"/><text x="517" y="615" class="clusterlabel">Recommendation and cross-cutting entities</text>
-  <rect x="625" y="655" width="220" height="125" rx="5" class="box"/><rect x="625" y="655" width="220" height="28" rx="5" class="head"/><text x="637" y="674" class="name">recommendations</text><text x="637" y="703" class="pk">PK id</text><text x="637" y="724" class="fk">FK user_id, media_item_id</text><text x="637" y="745" class="field">score, model_version, feedback</text><text x="637" y="766" class="field">reason, generated_at</text>
-  <text x="890" y="705" class="sub">Sessions are maintained in the</text><text x="890" y="730" class="sub">isolated user_sessions table by</text><text x="890" y="755" class="sub">the session middleware.</text>
-
-  <!-- relationship connectors -->
-  <path class="line" d="M235 208 H280"/><text x="238" y="198" class="rel">1 : many</text>
-  <path class="line" d="M380 305 V345"/><text x="388" y="332" class="rel">1 : many</text>
-  <path class="line" d="M760 208 H805"/><text x="764" y="198" class="rel">1 : many</text>
-  <path class="line" d="M480 260 C620 290 690 280 805 255"/><text x="620" y="274" class="rel">created by</text>
-  <path class="line" d="M1015 220 H1060"/><text x="1017" y="211" class="rel">many : many</text>
-  <path class="line" d="M1010 294 C1035 310 1040 325 1040 335"/><text x="980" y="330" class="rel">1 : many</text>
-  <path class="line" d="M1060 250 V292"/>
-  <path class="line" d="M805 290 C735 318 690 325 665 345"/><text x="700" y="330" class="rel">1 : many</text>
-  <path class="line" d="M805 315 V365"/><text x="817" y="343" class="rel">1 : many</text>
-  <path class="line" d="M480 280 C600 360 670 415 805 425"/><text x="610" y="395" class="rel">owns</text>
-  <path class="line" d="M1015 435 H1040"/><text x="1008" y="421" class="rel">1 : many</text>
-  <path class="line" d="M760 420 H805"/><text x="763" y="410" class="rel">current unit</text>
-  <path class="line" d="M1470 210 H1515"/><text x="1474" y="200" class="rel">1 : many</text>
-  <path class="line" d="M1015 245 C1190 230 1330 230 1515 230"/><text x="1195" y="218" class="rel">mapped by</text>
-  <path class="line" d="M1470 250 C1450 285 1410 300 1390 330"/><text x="1400" y="292" class="rel">1 : many</text>
-  <path class="line" d="M1490 400 H1530"/><text x="1494" y="390" class="rel">1 : many</text>
-  <path class="line" d="M1725 410 C1630 535 1140 600 845 700"/><text x="1220" y="595" class="rel">candidate match</text>
-  <path class="line" d="M805 495 C780 565 740 600 735 655"/><text x="748" y="600" class="rel">recommended</text>
-  <path class="line" d="M480 455 C550 550 630 605 670 655"/><text x="550" y="570" class="rel">receives</text>
-
-  <text x="55" y="1165" class="sub">Key relationships: Role–User, User–LibraryEntry, MediaType–MediaItem, MediaItem–Genre (through MediaGenre), LibraryEntry–ProgressEvent, Source–ExternalMapping, IngestionJob–IngestionCandidate, and User–Recommendation–MediaItem.</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="2100" height="1480" viewBox="0 0 2100 1480" role="img" aria-labelledby="title desc">
+<title id="title">MediaHub Entity Relationship Diagram</title>
+<desc id="desc">ER diagram of all eighteen implemented PostgreSQL tables, their primary and foreign keys, and major cardinalities.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#647781"/></marker></defs>
+<style>
+.bg{fill:#f7fafb}.title{font:700 34px Arial;fill:#153d45}.subtitle{font:17px Arial;fill:#5d7076}
+.cluster{fill:#ffffff;stroke:#b7cbd0;stroke-width:2;stroke-dasharray:8 6}.clusterName{font:700 18px Arial;fill:#3f6972}
+.entity{fill:#ffffff;stroke:#6f8b92;stroke-width:1.8}.entityName{font:700 17px Arial;fill:#ffffff}
+.field{font:14px Arial;fill:#26383d}.pk{font:700 14px Arial;fill:#176143}.fk{font:700 14px Arial;fill:#9a4d16}
+.connector{fill:none;stroke:#647781;stroke-width:1.7;marker-end:url(#arrow)}.rel{font:13px Arial;fill:#53676d}
+.legend{font:14px Arial;fill:#42565c}
+</style>
+<rect class="bg" width="2100" height="1480"/>
+<text x="55" y="55" class="title" text-anchor="start">MediaHub Entity Relationship Diagram</text>
+<text x="55" y="86" class="subtitle" text-anchor="start">Implemented PostgreSQL and Prisma schema • 18 tables • PK and FK fields shown • arrows point to the child or dependent table</text>
+<rect x="35" y="105" width="610" height="680" rx="12" class="cluster"/><text x="55" y="135" class="clusterName" text-anchor="start">Identity security and accountability</text>
+<rect x="690" y="105" width="980" height="680" rx="12" class="cluster"/><text x="710" y="135" class="clusterName" text-anchor="start">Canonical catalogue and personal tracking</text>
+<rect x="35" y="830" width="1705" height="430" rx="12" class="cluster"/><text x="55" y="860" class="clusterName" text-anchor="start">External sources authorized connections and controlled ingestion</text>
+<rect x="1720" y="350" width="345" height="360" rx="12" class="cluster"/><text x="1740" y="380" class="clusterName" text-anchor="start">Recommendations</text>
+<g aria-label="relationships"><path d="M280,220 L340,220" class="connector"/>
+<text x="310" y="208" class="rel" text-anchor="middle">1 : M</text><path d="M475,299 L475,360" class="connector"/>
+<text x="530" y="336" class="rel" text-anchor="middle">1 : 0..1</text><path d="M340,250 L295,250 L295,610 L445,610" class="connector"/>
+<text x="318" y="594" class="rel" text-anchor="middle">1 : M</text><path d="M610,225 L660,225 L660,465 L1040,465" class="connector"/>
+<text x="850" y="453" class="rel" text-anchor="middle">1 : M owns</text><path d="M610,270 L680,270 L680,975 L390,975" class="connector"/>
+<text x="535" y="963" class="rel" text-anchor="middle">1 : M connects</text><path d="M970,220 L1030,220" class="connector"/>
+<text x="1000" y="208" class="rel" text-anchor="middle">1 : M</text><path d="M1320,220 L1390,220" class="connector"/>
+<text x="1355" y="208" class="rel" text-anchor="middle">M : N</text><path d="M1320,260 L1360,260 L1360,360 L1390,360" class="connector"/><path d="M1500,264 L1500,315" class="connector"/><path d="M1145,319 L1145,395" class="connector"/>
+<text x="1182" y="360" class="rel" text-anchor="middle">1 : M</text><path d="M1030,285 L980,285 L980,455 L980,455" class="connector"/>
+<text x="936" y="442" class="rel" text-anchor="middle">1 : M units</text><path d="M980,470 L1040,470" class="connector"/>
+<text x="1010" y="458" class="rel" text-anchor="middle">current</text><path d="M1330,470 L1360,470 L1360,565 L1390,565" class="connector"/>
+<text x="1374" y="520" class="rel" text-anchor="middle">1 : M</text><path d="M1650,565 L1690,565 L1690,500 L1750,500" class="connector"/>
+<text x="1718" y="550" class="rel" text-anchor="middle">candidate</text><path d="M610,235 L650,235 L650,520 L1750,520" class="connector" stroke-dasharray="7 5"/>
+<text x="1600" y="508" class="rel" text-anchor="middle">1 : M recommendations</text><path d="M1320,250 L1660,250 L1660,475 L1750,475" class="connector"/>
+<text x="1700" y="462" class="rel" text-anchor="middle">1 : M</text><path d="M320,1000 L390,1000" class="connector"/>
+<text x="355" y="988" class="rel" text-anchor="middle">1 : M</text><path d="M610,290 L630,290 L630,940 L390,940" class="connector" stroke-dasharray="7 5"/>
+<text x="600" y="928" class="rel" text-anchor="middle">user</text><path d="M675,970 L735,970" class="connector"/>
+<text x="705" y="958" class="rel" text-anchor="middle">source/media</text><path d="M1010,970 L1070,970" class="connector"/>
+<text x="1040" y="958" class="rel" text-anchor="middle">source</text><path d="M1345,970 L1410,970" class="connector"/>
+<text x="1378" y="958" class="rel" text-anchor="middle">1 : M</text><path d="M1320,300 L1380,300 L1380,1015 L1410,1015" class="connector" stroke-dasharray="7 5"/>
+<text x="1392" y="1003" class="rel" text-anchor="middle">match</text></g>
+<g aria-label="entities"><rect x="55" y="155" width="225" height="102" rx="8" class="entity"/>
+<path d="M63,155 H272 Q280,155 280,163 V193 H55 V163 Q55,155 63,155 Z" fill="#247987"/>
+<text x="69" y="181" class="entityName" text-anchor="start">roles</text>
+<text x="69" y="214" class="pk" text-anchor="start">PK  id</text>
+<text x="69" y="238" class="field" text-anchor="start">name UNIQUE</text><rect x="340" y="135" width="270" height="174" rx="8" class="entity"/>
+<path d="M348,135 H602 Q610,135 610,143 V173 H340 V143 Q340,135 348,135 Z" fill="#247987"/>
+<text x="354" y="161" class="entityName" text-anchor="start">users</text>
+<text x="354" y="194" class="pk" text-anchor="start">PK  id UUID</text>
+<text x="354" y="218" class="fk" text-anchor="start">FK  role_id</text>
+<text x="354" y="242" class="field" text-anchor="start">google_subject UNIQUE</text>
+<text x="354" y="266" class="field" text-anchor="start">email UNIQUE</text>
+<text x="354" y="290" class="field" text-anchor="start">display_name, status</text><rect x="55" y="340" width="240" height="126" rx="8" class="entity"/>
+<path d="M63,340 H287 Q295,340 295,348 V378 H55 V348 Q55,340 63,340 Z" fill="#247987"/>
+<text x="69" y="366" class="entityName" text-anchor="start">user_sessions</text>
+<text x="69" y="399" class="pk" text-anchor="start">PK  sid</text>
+<text x="69" y="423" class="field" text-anchor="start">sess JSONB</text>
+<text x="69" y="447" class="field" text-anchor="start">expire INDEX</text><rect x="340" y="360" width="270" height="150" rx="8" class="entity"/>
+<path d="M348,360 H602 Q610,360 610,368 V398 H340 V368 Q340,360 348,360 Z" fill="#247987"/>
+<text x="354" y="386" class="entityName" text-anchor="start">account_deletion_challenges</text>
+<text x="354" y="419" class="field" text-anchor="start">PK/FK  user_id → users</text>
+<text x="354" y="443" class="field" text-anchor="start">code_hash</text>
+<text x="354" y="467" class="field" text-anchor="start">expires_at INDEX</text>
+<text x="354" y="491" class="field" text-anchor="start">attempts</text><rect x="170" y="555" width="275" height="150" rx="8" class="entity"/>
+<path d="M178,555 H437 Q445,555 445,563 V593 H170 V563 Q170,555 178,555 Z" fill="#247987"/>
+<text x="184" y="581" class="entityName" text-anchor="start">audit_logs</text>
+<text x="184" y="614" class="pk" text-anchor="start">PK  id BIGINT</text>
+<text x="184" y="638" class="fk" text-anchor="start">FK  actor_user_id</text>
+<text x="184" y="662" class="field" text-anchor="start">action, entity_type</text>
+<text x="184" y="686" class="field" text-anchor="start">old_values, new_values</text><rect x="720" y="135" width="250" height="126" rx="8" class="entity"/>
+<path d="M728,135 H962 Q970,135 970,143 V173 H720 V143 Q720,135 728,135 Z" fill="#247987"/>
+<text x="734" y="161" class="entityName" text-anchor="start">media_types</text>
+<text x="734" y="194" class="pk" text-anchor="start">PK  id</text>
+<text x="734" y="218" class="field" text-anchor="start">code, name UNIQUE</text>
+<text x="734" y="242" class="field" text-anchor="start">section, progress_mode</text><rect x="1030" y="115" width="290" height="198" rx="8" class="entity"/>
+<path d="M1038,115 H1312 Q1320,115 1320,123 V153 H1030 V123 Q1030,115 1038,115 Z" fill="#247987"/>
+<text x="1044" y="141" class="entityName" text-anchor="start">media_items</text>
+<text x="1044" y="174" class="pk" text-anchor="start">PK  id UUID</text>
+<text x="1044" y="198" class="fk" text-anchor="start">FK  media_type_id</text>
+<text x="1044" y="222" class="fk" text-anchor="start">FK  created_by_user_id</text>
+<text x="1044" y="246" class="field" text-anchor="start">title, normalized_title</text>
+<text x="1044" y="270" class="field" text-anchor="start">cover_url, total_units</text>
+<text x="1044" y="294" class="field" text-anchor="start">origin, review_status</text><rect x="1390" y="135" width="225" height="102" rx="8" class="entity"/>
+<path d="M1398,135 H1607 Q1615,135 1615,143 V173 H1390 V143 Q1390,135 1398,135 Z" fill="#247987"/>
+<text x="1404" y="161" class="entityName" text-anchor="start">genres</text>
+<text x="1404" y="194" class="pk" text-anchor="start">PK  id</text>
+<text x="1404" y="218" class="field" text-anchor="start">name, slug UNIQUE</text><rect x="1390" y="315" width="245" height="102" rx="8" class="entity"/>
+<path d="M1398,315 H1627 Q1635,315 1635,323 V353 H1390 V323 Q1390,315 1398,315 Z" fill="#247987"/>
+<text x="1404" y="341" class="entityName" text-anchor="start">media_genres</text>
+<text x="1404" y="374" class="field" text-anchor="start">PK/FK  media_item_id</text>
+<text x="1404" y="398" class="field" text-anchor="start">PK/FK  genre_id</text><rect x="720" y="390" width="260" height="150" rx="8" class="entity"/>
+<path d="M728,390 H972 Q980,390 980,398 V428 H720 V398 Q720,390 728,390 Z" fill="#247987"/>
+<text x="734" y="416" class="entityName" text-anchor="start">media_units</text>
+<text x="734" y="449" class="pk" text-anchor="start">PK  id UUID</text>
+<text x="734" y="473" class="fk" text-anchor="start">FK  media_item_id</text>
+<text x="734" y="497" class="fk" text-anchor="start">FK  parent_unit_id</text>
+<text x="734" y="521" class="field" text-anchor="start">unit_kind, sequence</text><rect x="1040" y="395" width="290" height="174" rx="8" class="entity"/>
+<path d="M1048,395 H1322 Q1330,395 1330,403 V433 H1040 V403 Q1040,395 1048,395 Z" fill="#247987"/>
+<text x="1054" y="421" class="entityName" text-anchor="start">library_entries</text>
+<text x="1054" y="454" class="pk" text-anchor="start">PK  id UUID</text>
+<text x="1054" y="478" class="fk" text-anchor="start">FK  user_id, media_item_id</text>
+<text x="1054" y="502" class="fk" text-anchor="start">FK  current_unit_id</text>
+<text x="1054" y="526" class="field" text-anchor="start">status, progress, rating</text>
+<text x="1054" y="550" class="field" text-anchor="start">UNIQUE(user_id, media_item_id)</text><rect x="1390" y="500" width="260" height="150" rx="8" class="entity"/>
+<path d="M1398,500 H1642 Q1650,500 1650,508 V538 H1390 V508 Q1390,500 1398,500 Z" fill="#247987"/>
+<text x="1404" y="526" class="entityName" text-anchor="start">progress_events</text>
+<text x="1404" y="559" class="pk" text-anchor="start">PK  id UUID</text>
+<text x="1404" y="583" class="fk" text-anchor="start">FK  library_entry_id</text>
+<text x="1404" y="607" class="fk" text-anchor="start">FK  unit_id</text>
+<text x="1404" y="631" class="field" text-anchor="start">old_progress, new_progress</text><rect x="80" y="925" width="240" height="126" rx="8" class="entity"/>
+<path d="M88,925 H312 Q320,925 320,933 V963 H80 V933 Q80,925 88,925 Z" fill="#247987"/>
+<text x="94" y="951" class="entityName" text-anchor="start">sources</text>
+<text x="94" y="984" class="pk" text-anchor="start">PK  id</text>
+<text x="94" y="1008" class="field" text-anchor="start">key, name UNIQUE</text>
+<text x="94" y="1032" class="field" text-anchor="start">connector_kind, base_url</text><rect x="390" y="885" width="285" height="174" rx="8" class="entity"/>
+<path d="M398,885 H667 Q675,885 675,893 V923 H390 V893 Q390,885 398,885 Z" fill="#247987"/>
+<text x="404" y="911" class="entityName" text-anchor="start">user_connections</text>
+<text x="404" y="944" class="pk" text-anchor="start">PK  id UUID</text>
+<text x="404" y="968" class="fk" text-anchor="start">FK  user_id, source_id</text>
+<text x="404" y="992" class="field" text-anchor="start">encrypted access/refresh tokens</text>
+<text x="404" y="1016" class="field" text-anchor="start">status, last_synced_at</text>
+<text x="404" y="1040" class="field" text-anchor="start">UNIQUE(user_id, source_id)</text><rect x="735" y="900" width="275" height="150" rx="8" class="entity"/>
+<path d="M743,900 H1002 Q1010,900 1010,908 V938 H735 V908 Q735,900 743,900 Z" fill="#247987"/>
+<text x="749" y="926" class="entityName" text-anchor="start">external_mappings</text>
+<text x="749" y="959" class="pk" text-anchor="start">PK  id UUID</text>
+<text x="749" y="983" class="fk" text-anchor="start">FK  media_item_id, source_id</text>
+<text x="749" y="1007" class="field" text-anchor="start">external_id, source_url</text>
+<text x="749" y="1031" class="field" text-anchor="start">UNIQUE(source_id, external_id)</text><rect x="1070" y="875" width="275" height="150" rx="8" class="entity"/>
+<path d="M1078,875 H1337 Q1345,875 1345,883 V913 H1070 V883 Q1070,875 1078,875 Z" fill="#247987"/>
+<text x="1084" y="901" class="entityName" text-anchor="start">ingestion_jobs</text>
+<text x="1084" y="934" class="pk" text-anchor="start">PK  id UUID</text>
+<text x="1084" y="958" class="fk" text-anchor="start">FK  requested_by_user_id</text>
+<text x="1084" y="982" class="fk" text-anchor="start">FK  source_id</text>
+<text x="1084" y="1006" class="field" text-anchor="start">kind, status, counters</text><rect x="1410" y="870" width="300" height="174" rx="8" class="entity"/>
+<path d="M1418,870 H1702 Q1710,870 1710,878 V908 H1410 V878 Q1410,870 1418,870 Z" fill="#247987"/>
+<text x="1424" y="896" class="entityName" text-anchor="start">ingestion_candidates</text>
+<text x="1424" y="929" class="pk" text-anchor="start">PK  id UUID</text>
+<text x="1424" y="953" class="fk" text-anchor="start">FK  job_id, source_id</text>
+<text x="1424" y="977" class="fk" text-anchor="start">FK  media_type_id</text>
+<text x="1424" y="1001" class="fk" text-anchor="start">FK  match_media_id</text>
+<text x="1424" y="1025" class="field" text-anchor="start">payload, action, decision</text><rect x="1750" y="410" width="290" height="174" rx="8" class="entity"/>
+<path d="M1758,410 H2032 Q2040,410 2040,418 V448 H1750 V418 Q1750,410 1758,410 Z" fill="#247987"/>
+<text x="1764" y="436" class="entityName" text-anchor="start">recommendations</text>
+<text x="1764" y="469" class="pk" text-anchor="start">PK  id UUID</text>
+<text x="1764" y="493" class="fk" text-anchor="start">FK  user_id, media_item_id</text>
+<text x="1764" y="517" class="field" text-anchor="start">score, model_version</text>
+<text x="1764" y="541" class="field" text-anchor="start">reason, feedback</text>
+<text x="1764" y="565" class="field" text-anchor="start">generated_at, expires_at</text></g>
+<text x="55" y="1330" class="legend" text-anchor="start">Legend  Green PK = primary key   Orange FK = foreign key   PK/FK = identifying relationship   M:N relationships use junction tables</text>
+<text x="55" y="1360" class="legend" text-anchor="start">Core paths  users → library_entries → progress_events   media_items ↔ genres   sources → external_mappings   users ↔ sources via user_connections</text>
+<text x="55" y="1390" class="legend" text-anchor="start">Delete behavior  personal records generally CASCADE from users   shared catalogue/source references use RESTRICT or SET NULL</text>
 </svg>

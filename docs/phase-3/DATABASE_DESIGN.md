@@ -2,7 +2,7 @@
 
 **Database:** PostgreSQL  
 **ORM:** Prisma  
-**Status:** Schema v1 planning baseline complete  
+**Status:** Schema v1 planning baseline implemented and extended through reviewed migrations
 **Prepared:** 5 October 2026
 
 ## Design goals
@@ -15,6 +15,11 @@
 - Support the joins, aggregates, views, transactions, function/procedure, trigger, and indexes required by the project brief.
 
 ## Entity-relationship diagram
+
+The implementation diagram is maintained at
+[mediahub-er-diagram.svg](../database/mediahub-er-diagram.svg). It includes the original catalogue,
+library, ingestion, recommendation, and audit entities plus the session, account-deletion, and
+connected-account tables added during implementation.
 
 ```mermaid
 erDiagram
@@ -502,4 +507,3 @@ Indexes will be validated with `EXPLAIN ANALYZE`; redundant indexes will not be 
 - [x] 1NF, 2NF, and 3NF are justified.
 - [x] Delete/update behavior and index plan are documented.
 - [x] Views, function/procedure, triggers, joins/aggregates, and transaction cases are planned.
-

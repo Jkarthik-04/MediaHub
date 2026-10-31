@@ -98,6 +98,32 @@ docker compose stop postgres
 | `npm run db:seed` | Insert or update the sample data |
 | `npm run db:studio` | Open Prisma Studio |
 
+For rubric evidence, the Neon SQL Editor can be used with the same `DATABASE_URL` database. Useful
+read-only demonstrations are:
+
+```sql
+SELECT * FROM user_library_summary LIMIT 10;
+SELECT * FROM media_popularity_summary ORDER BY library_count DESC LIMIT 10;
+SELECT * FROM get_user_genre_profile('USER_UUID'::uuid);
+```
+
+Replace `USER_UUID` with an ID returned by `SELECT id, email FROM users;`. The update-trigger
+evidence can be captured by changing a test library entry and then querying the newest row in
+`audit_logs`.
+
+## Backup and recovery
+
+Use PostgreSQL's native tools and restore into a separate empty database for verification:
+
+```bash
+pg_dump "$DATABASE_URL" --format=custom --file=mediahub.backup
+createdb mediahub_restore_test
+pg_restore --clean --if-exists --dbname="$RESTORE_DATABASE_URL" mediahub.backup
+```
+
+After restoring, verify table counts, views, functions, triggers, and representative rows. Never
+commit a production dump or a dump containing personal data.
+
 The seed creates `admin@mediahub.local` and `user@mediahub.local` as database demonstration records.
 They are not local username/password credentials because MediaHub signs in through Google OAuth.
 
@@ -146,12 +172,17 @@ docs/             Planning and database documentation
 - [Requirements and UX specification](docs/phase-2/REQUIREMENTS_AND_UX.md)
 - [REST API contract](docs/phase-2/API_CONTRACT.md)
 - [Database design and ER diagram](docs/phase-3/DATABASE_DESIGN.md)
+- [Implemented 18-table ER diagram](docs/database/mediahub-er-diagram.svg)
+- [Implemented relational schema](docs/database/mediahub-relational-schema.svg)
+- [System architecture and design](docs/database/mediahub-system-architecture.svg)
 - [Data dictionary](docs/phase-3/DATA_DICTIONARY.md)
 - [Phase 4 foundation and setup](docs/phase-4/FOUNDATION.md)
 - [Implemented Phase 5 API reference](docs/phase-5/API_REFERENCE.md)
 - [Query-plan and database-object evidence](docs/phase-5/QUERY_PLAN_EVIDENCE.md)
 - [Phase 6 authentication, authorization, and security](docs/phase-6/AUTHORIZATION_AND_SECURITY.md)
 - [Phase 8 explainable recommendations](docs/phase-8/RECOMMENDATIONS.md)
+- [Phase 7 frontend implementation](docs/phase-7/FRONTEND_IMPLEMENTATION.md)
+- [Phase 9 testing, backup, and recovery](docs/phase-9/TESTING_BACKUP_AND_RECOVERY.md)
 - [Additional connected-app synchronization](docs/Additional/CONNECTED_APPS.md)
 - [Individual Git collaboration guide](docs/GIT_COLLABORATION_GUIDE.md)
 
