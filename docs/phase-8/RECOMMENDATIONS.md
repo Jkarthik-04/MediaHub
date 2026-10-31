@@ -21,6 +21,10 @@ match percentage, matching genres, a human-readable reason, **Add to library**, 
 interested**. The row remains horizontally scrollable by touch, trackpad, or Shift+wheel while its
 visual scrollbar is hidden. Old `/recommendations` links redirect to `/discovery`.
 
+Cover URLs are retained during provider normalization. Jikan, OMDb, Open Library, and Google Books
+map provider image fields to the shared `media_items.cover_url` column; a missing image is rendered
+as a deliberate “No cover” placeholder rather than a broken image.
+
 ## Recommendation inputs
 
 The service reads only normalized MediaHub data:

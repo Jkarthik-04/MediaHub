@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1320" viewBox="0 0 2000 1320" role="img" aria-labelledby="title desc">
+<title id="title">MediaHub System Architecture and Design</title>
+<desc id="desc">Logical architecture showing client, API, middleware, services, Prisma, PostgreSQL, external providers, and GitHub Actions deployment.</desc>
+<defs>
+ <marker id="arrow" markerWidth="11" markerHeight="11" refX="9" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#62747b"/></marker>
+ <marker id="arrowBack" markerWidth="11" markerHeight="11" refX="1" refY="5" orient="auto"><path d="M10,0 L0,5 L10,10 Z" fill="#62747b"/></marker>
+</defs>
+<style>
+.bg{fill:#f7fafb}.title{font:700 36px Arial;fill:#153d45}.subtitle{font:17px Arial;fill:#5d7076}
+.lane{fill:#ffffff;stroke:#c5d5d9;stroke-width:2;stroke-dasharray:9 6}.laneTitle{font:700 18px Arial;fill:#4b6d75}
+.component{fill:#ffffff;stroke:#78939a;stroke-width:1.8}.componentTitle{font:700 18px Arial;fill:#ffffff}
+.componentText{font:15px Arial;fill:#24383e}.flow{fill:none;stroke:#62747b;stroke-width:2.2;marker-end:url(#arrow)}
+.flowLabel{font:13px Arial;fill:#52666c}.note{font:14px Arial;fill:#42575d}
+</style>
+<rect class="bg" width="2000" height="1320"/>
+<text x="60" y="55" class="title" text-anchor="start">MediaHub System Architecture and Design</text>
+<text x="60" y="88" class="subtitle" text-anchor="start">Layered React Express Prisma PostgreSQL architecture with trusted boundaries external integrations and automated delivery</text>
+<rect x="35" y="105" width="1600" height="590" rx="14" class="lane"/><text x="55" y="135" class="laneTitle" text-anchor="start">Application boundary</text>
+<rect x="35" y="730" width="1760" height="330" rx="14" class="lane"/><text x="55" y="760" class="laneTitle" text-anchor="start">Data and external service boundary</text>
+<rect x="35" y="1080" width="1870" height="215" rx="14" class="lane"/><text x="55" y="1110" class="laneTitle" text-anchor="start">Delivery pipeline</text>
+<g aria-label="flows"><path d="M410,220 L530,220" class="flow" marker-start="url(#arrowBack)"/><text x="470.0" y="212.0" class="flowLabel" text-anchor="middle">HTTPS</text><path d="M950,220 L1080,220" class="flow" marker-start="url(#arrowBack)"/><text x="1015.0" y="212.0" class="flowLabel" text-anchor="middle">JSON REST</text><path d="M1340,330 L1340,405" class="flow"/><text x="1340.0" y="359.5" class="flowLabel" text-anchor="middle">middleware</text><path d="M1080,500 L955,500" class="flow" marker-start="url(#arrowBack)"/><text x="1017.5" y="492.0" class="flowLabel" text-anchor="middle">service calls</text><path d="M790,670 L900,790" class="flow"/><text x="845.0" y="722.0" class="flowLabel" text-anchor="middle">repositories</text><path d="M1150,870 L1270,870" class="flow" marker-start="url(#arrowBack)"/><text x="1210.0" y="862.0" class="flowLabel" text-anchor="middle">SQL over SSL</text><path d="M500,560 L360,780" class="flow" marker-start="url(#arrowBack)"/><text x="430.0" y="662.0" class="flowLabel" text-anchor="middle">normalized provider data</text><path d="M1080,270 L590,850" class="flow" stroke-dasharray="9 6" marker-start="url(#arrowBack)"/><text x="835.0" y="552.0" class="flowLabel" text-anchor="middle">OAuth and API requests</text><path d="M445,1130 L965,1110" class="flow"/><text x="705.0" y="1112.0" class="flowLabel" text-anchor="middle">push and pull request</text><path d="M1270,1190 L1420,1190" class="flow"/><text x="1345.0" y="1182.0" class="flowLabel" text-anchor="middle">deploy hook</text><path d="M1615,1120 L1530,1000" class="flow"/><text x="1572.5" y="1052.0" class="flowLabel" text-anchor="middle">runtime</text><path d="M1040,1110 L1470,1000" class="flow" stroke-dasharray="9 6"/><text x="1255.0" y="1047.0" class="flowLabel" text-anchor="middle">migrate deploy</text></g>
+<g aria-label="components"><rect x="80" y="145" width="330" height="150" rx="12" class="component"/>
+<rect x="80" y="145" width="330" height="40" rx="12" fill="#315b73"/>
+<rect x="80" y="173" width="330" height="12" fill="#315b73"/>
+<text x="96" y="172" class="componentTitle" text-anchor="start">Users and browser</text>
+<text x="98" y="213" class="componentText" text-anchor="start">Desktop or mobile browser</text>
+<text x="98" y="238" class="componentText" text-anchor="start">Secure session cookie</text>
+<text x="98" y="263" class="componentText" text-anchor="start">Responsive interaction</text><rect x="530" y="125" width="420" height="190" rx="12" class="component"/>
+<rect x="530" y="125" width="420" height="40" rx="12" fill="#247987"/>
+<rect x="530" y="153" width="420" height="12" fill="#247987"/>
+<text x="546" y="152" class="componentTitle" text-anchor="start">React and Vite web client</text>
+<text x="548" y="193" class="componentText" text-anchor="start">Dashboard Discovery Reading Watching</text>
+<text x="548" y="218" class="componentText" text-anchor="start">Recommendation and profile views</text>
+<text x="548" y="243" class="componentText" text-anchor="start">Client validation and API services</text>
+<text x="548" y="268" class="componentText" text-anchor="start">Built static assets served by Render</text><rect x="1080" y="110" width="520" height="220" rx="12" class="component"/>
+<rect x="1080" y="110" width="520" height="40" rx="12" fill="#205d69"/>
+<rect x="1080" y="138" width="520" height="12" fill="#205d69"/>
+<text x="1096" y="137" class="componentTitle" text-anchor="start">Express TypeScript API</text>
+<text x="1098" y="178" class="componentText" text-anchor="start">Versioned REST routes and controllers</text>
+<text x="1098" y="203" class="componentText" text-anchor="start">Zod request validation</text>
+<text x="1098" y="228" class="componentText" text-anchor="start">Structured errors and request IDs</text>
+<text x="1098" y="253" class="componentText" text-anchor="start">Provider adapters and domain services</text>
+<text x="1098" y="278" class="componentText" text-anchor="start">Production process listens on Render PORT</text><rect x="1090" y="405" width="500" height="245" rx="12" class="component"/>
+<rect x="1090" y="405" width="500" height="40" rx="12" fill="#7b5a30"/>
+<rect x="1090" y="433" width="500" height="12" fill="#7b5a30"/>
+<text x="1106" y="432" class="componentTitle" text-anchor="start">Security and request middleware</text>
+<text x="1108" y="473" class="componentText" text-anchor="start">Google OAuth and Passport</text>
+<text x="1108" y="498" class="componentText" text-anchor="start">PostgreSQL server sessions</text>
+<text x="1108" y="523" class="componentText" text-anchor="start">USER and ADMIN RBAC</text>
+<text x="1108" y="548" class="componentText" text-anchor="start">Helmet CORS rate limiting 1 MB body</text>
+<text x="1108" y="573" class="componentText" text-anchor="start">Ownership checks and secure cookies</text>
+<text x="1108" y="598" class="componentText" text-anchor="start">OAuth state and PKCE where required</text><rect x="500" y="440" width="455" height="230" rx="12" class="component"/>
+<rect x="500" y="440" width="455" height="40" rx="12" fill="#3a7d62"/>
+<rect x="500" y="468" width="455" height="12" fill="#3a7d62"/>
+<text x="516" y="467" class="componentTitle" text-anchor="start">Application services</text>
+<text x="518" y="508" class="componentText" text-anchor="start">Catalogue and discovery</text>
+<text x="518" y="533" class="componentText" text-anchor="start">Library and progress</text>
+<text x="518" y="558" class="componentText" text-anchor="start">Ingestion normalization and deduplication</text>
+<text x="518" y="583" class="componentText" text-anchor="start">Genre vector recommendations</text>
+<text x="518" y="608" class="componentText" text-anchor="start">Connected account synchronization</text>
+<text x="518" y="633" class="componentText" text-anchor="start">Account export and deletion OTP</text><rect x="760" y="790" width="390" height="165" rx="12" class="component"/>
+<rect x="760" y="790" width="390" height="40" rx="12" fill="#5d5d85"/>
+<rect x="760" y="818" width="390" height="12" fill="#5d5d85"/>
+<text x="776" y="817" class="componentTitle" text-anchor="start">Prisma ORM</text>
+<text x="778" y="858" class="componentText" text-anchor="start">Parameterized database access</text>
+<text x="778" y="883" class="componentText" text-anchor="start">Relations transactions and migrations</text>
+<text x="778" y="908" class="componentText" text-anchor="start">Generated type safe client</text><rect x="1270" y="770" width="500" height="230" rx="12" class="component"/>
+<rect x="1270" y="770" width="500" height="40" rx="12" fill="#315b73"/>
+<rect x="1270" y="798" width="500" height="12" fill="#315b73"/>
+<text x="1286" y="797" class="componentTitle" text-anchor="start">PostgreSQL on Neon</text>
+<text x="1288" y="838" class="componentText" text-anchor="start">18 normalized tables</text>
+<text x="1288" y="863" class="componentText" text-anchor="start">PK FK UNIQUE DEFAULT and enum constraints</text>
+<text x="1288" y="888" class="componentText" text-anchor="start">Indexes views function and trigger</text>
+<text x="1288" y="913" class="componentText" text-anchor="start">Audit logs and session storage</text>
+<text x="1288" y="938" class="componentText" text-anchor="start">SSL pooled production connection</text><rect x="70" y="780" width="520" height="255" rx="12" class="component"/>
+<rect x="70" y="780" width="520" height="40" rx="12" fill="#7a4c77"/>
+<rect x="70" y="808" width="520" height="12" fill="#7a4c77"/>
+<text x="86" y="807" class="componentTitle" text-anchor="start">External identity metadata and email</text>
+<text x="88" y="848" class="componentText" text-anchor="start">Google OAuth login</text>
+<text x="88" y="873" class="componentText" text-anchor="start">Jikan anime and manga discovery</text>
+<text x="88" y="898" class="componentText" text-anchor="start">OMDb movie discovery</text>
+<text x="88" y="923" class="componentText" text-anchor="start">Open Library book discovery</text>
+<text x="88" y="948" class="componentText" text-anchor="start">AniList Trakt Google Books connections</text>
+<text x="88" y="973" class="componentText" text-anchor="start">Resend account deletion email</text><rect x="220" y="1130" width="450" height="135" rx="12" class="component"/>
+<rect x="220" y="1130" width="450" height="40" rx="12" fill="#333f48"/>
+<rect x="220" y="1158" width="450" height="12" fill="#333f48"/>
+<text x="236" y="1157" class="componentTitle" text-anchor="start">GitHub</text>
+<text x="238" y="1198" class="componentText" text-anchor="start">main dev and feature branches</text>
+<text x="238" y="1223" class="componentText" text-anchor="start">Pull requests and protected CI checks</text><rect x="810" y="1110" width="460" height="165" rx="12" class="component"/>
+<rect x="810" y="1110" width="460" height="40" rx="12" fill="#333f48"/>
+<rect x="810" y="1138" width="460" height="12" fill="#333f48"/>
+<text x="826" y="1137" class="componentTitle" text-anchor="start">GitHub Actions CI and CD</text>
+<text x="828" y="1178" class="componentText" text-anchor="start">Install generate migrate seed</text>
+<text x="828" y="1203" class="componentText" text-anchor="start">Test lint type check and build</text>
+<text x="828" y="1228" class="componentText" text-anchor="start">Production migration and Render deploy hook</text><rect x="1420" y="1120" width="390" height="145" rx="12" class="component"/>
+<rect x="1420" y="1120" width="390" height="40" rx="12" fill="#333f48"/>
+<rect x="1420" y="1148" width="390" height="12" fill="#333f48"/>
+<text x="1436" y="1147" class="componentTitle" text-anchor="start">Render production</text>
+<text x="1438" y="1188" class="componentText" text-anchor="start">Build and run MediaHub</text>
+<text x="1438" y="1213" class="componentText" text-anchor="start">Runtime environment variables</text>
+<text x="1438" y="1238" class="componentText" text-anchor="start">HTTPS public application</text></g>
+<text x="1640" y="170" class="laneTitle" text-anchor="start">Key design rules</text>
+<text x="1640" y="205" class="note" text-anchor="start">• Browser never receives provider secrets</text>
+<text x="1640" y="235" class="note" text-anchor="start">• Express enforces auth and ownership</text>
+<text x="1640" y="265" class="note" text-anchor="start">• Prisma parameterizes database access</text>
+<text x="1640" y="295" class="note" text-anchor="start">• OAuth tokens are AES 256 GCM encrypted</text>
+<text x="1640" y="325" class="note" text-anchor="start">• External data is normalized before write</text>
+<text x="1640" y="355" class="note" text-anchor="start">• CI must pass before production deploy</text>
+</svg>

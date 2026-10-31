@@ -7,6 +7,10 @@
 This file records representative plans for two common operations. Timings are examples
 from one local run and will vary by machine and dataset size.
 
+The same database objects are also demonstrated in the academic report: views for joined and
+aggregated results, `get_user_genre_profile(uuid)` for the function requirement, and the library
+update trigger that writes an `audit_logs` row.
+
 ## Indexes under review
 
 PostgreSQL reported these definitions from `pg_indexes`:
